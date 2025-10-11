@@ -172,6 +172,7 @@ export default function ProxyManager() {
                   </div>
                 </CardHeader>
               <CardContent>
+                {!status?.proxied && (
                 <div className="space-y-3">
                   {/* Cloudflare DNS */}
                   <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
@@ -241,6 +242,7 @@ export default function ProxyManager() {
                     </div>
                   </div>
                 </div>
+                )}
               </CardContent>
             </Card>
             )
