@@ -296,17 +296,20 @@ router.get('/:id/proxy-status', async (req, res) => {
     const http = require('http');
     
     const options = {
-      hostname: 'localhost',
+      hostname: '127.0.0.1',
       port: 8080,
       path: '/',
-      method: 'HEAD',
+      method: 'GET',
       headers: {
         'Host': domain.domain
       },
-      timeout: 2000
+      timeout: 3000
     };
 
     const proxyReq = http.request(options, (proxyRes) => {
+      // Consume response data to free up memory
+      proxyRes.resume();
+      
       res.json({
         proxied: proxyRes.statusCode < 500,
         statusCode: proxyRes.statusCode,
