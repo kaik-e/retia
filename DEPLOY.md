@@ -19,7 +19,10 @@ npm run setup
 cp .env.example .env
 nano .env  # Edite JWT_SECRET para algo seguro!
 
-# Rode migrações
+# Crie diretórios necessários
+mkdir -p data data/templates
+
+# Rode migrações (cria banco de dados)
 npm run migrate
 
 # Build do frontend

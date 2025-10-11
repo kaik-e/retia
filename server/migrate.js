@@ -1,10 +1,19 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 
 const dbPath = process.env.DATABASE_PATH || './data/cloaker.db';
+const dbDir = path.dirname(dbPath);
 
 console.log('Running database migration...');
 console.log('Database path:', dbPath);
+
+// Ensure data directory exists
+if (!fs.existsSync(dbDir)) {
+  console.log('Creating data directory...');
+  fs.mkdirSync(dbDir, { recursive: true });
+  console.log('✓ Data directory created');
+}
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
