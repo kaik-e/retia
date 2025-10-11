@@ -10,15 +10,19 @@
 ```bash
 # Clone o projeto
 git clone [seu-repo]
-cd c0alk
+cd retia
 
 # Instale dependências
 npm run setup
 
+# Configure variáveis de ambiente
+cp .env.example .env
+nano .env  # Edite JWT_SECRET para algo seguro!
+
 # Rode migrações
 npm run migrate
 
-# Build do frontend (opcional, para servir estático)
+# Build do frontend
 npm run build
 ```
 
@@ -29,10 +33,10 @@ npm run build
 npm install -g pm2
 
 # Iniciar API (porta 3000)
-pm2 start server/index.js --name "c0alk-api"
+pm2 start server/index.js --name "retia-api"
 
 # Iniciar Proxy (porta 8080)
-pm2 start server/proxy-server.js --name "c0alk-proxy"
+pm2 start server/proxy-server.js --name "retia-proxy"
 
 # Salvar configuração
 pm2 save
@@ -89,6 +93,12 @@ pm2 restart all
 ```
 http://[seu-ip]:3000
 ```
+
+**Login Padrão:**
+- Usuário: `retia`
+- Senha: `Retia10@@`
+
+⚠️ **IMPORTANTE:** Mude as credenciais em produção editando `server/middleware/auth.js`
 
 ## Fluxo de Tráfego
 

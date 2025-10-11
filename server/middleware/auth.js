@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'c0alk-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'retia-secret-key-change-in-production';
 
 // Default credentials
 const DEFAULT_USER = {

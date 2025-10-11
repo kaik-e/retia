@@ -1,6 +1,7 @@
-import { Outlet, Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Globe, FileText, Activity, Server, Shield } from 'lucide-react'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
+import { LayoutDashboard, Globe, FileText, Activity, Server, Shield, LogOut, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -12,6 +13,14 @@ const navigation = [
 
 export default function Layout() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    navigate('/login')
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -47,9 +56,22 @@ export default function Layout() {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-border">
+          <div className="p-4 border-t border-border space-y-3">
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md">
+              <User className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{user.username || 'retia'}</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={handleLogout}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </Button>
             <p className="text-xs text-muted-foreground text-center">
-              Website Cloaker v1.0
+              Retia v1.0
             </p>
           </div>
         </div>

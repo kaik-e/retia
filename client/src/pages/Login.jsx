@@ -50,7 +50,7 @@ export default function Login() {
               <Lock className="w-8 h-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">C0alk Cloaker</CardTitle>
+          <CardTitle className="text-2xl font-bold">Retia Cloaker</CardTitle>
           <CardDescription>
             Entre com suas credenciais para acessar o painel
           </CardDescription>
