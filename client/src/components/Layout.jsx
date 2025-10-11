@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Globe, FileText, Activity, Server, Shield, LogOut, User } from 'lucide-react'
+import { LayoutDashboard, Globe, FileText, Activity, Server, Shield, LogOut, User, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
@@ -9,6 +9,7 @@ const navigation = [
   { name: 'Templates', href: '/templates', icon: FileText },
   { name: 'Logs', href: '/logs', icon: Activity },
   { name: 'Proxy', href: '/proxy', icon: Server },
+  { name: 'Usuários', href: '/users', icon: Users, masterOnly: true },
 ]
 
 export default function Layout() {
@@ -36,6 +37,11 @@ export default function Layout() {
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-1">
             {navigation.map((item) => {
+              // Hide master-only items for non-master users
+              if (item.masterOnly && user.role !== 'master') {
+                return null
+              }
+              
               const isActive = location.pathname.startsWith(item.href)
               return (
                 <Link

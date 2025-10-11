@@ -9,12 +9,36 @@ const dbDir = path.dirname(dbPath);
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
-
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error opening database:', err);
   } else {
     console.log('Connected to SQLite database');
+
+    // Initialize tables
+    db.serialize(() => {
+      // Users table
+      db.run(`
+        CREATE TABLE IF NOT EXISTS users (
+          id TEXT PRIMARY KEY,
+          username TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL,
+          email TEXT,
+          role TEXT NOT NULL DEFAULT 'user',
+          is_active INTEGER DEFAULT 1,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          last_login DATETIME
+        )
+      `);
+
+      // Insert master user if not exists
+      db.run(`
+        INSERT OR IGNORE INTO users (id, username, password, role, is_active)
+        VALUES ('master-user-id', 'retia', 'Retia10@@', 'master', 1)
+      `);
+    });
+
     initDatabase();
   }
 });

@@ -1,4 +1,4 @@
-# C0alk - Website Cloaker
+# Retia - Website Cloaker
 
 A powerful website cloaking system with Nginx reverse proxy integration and a modern management dashboard.
 

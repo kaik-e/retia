@@ -175,9 +175,6 @@ router.post('/', (req, res) => {
 
 // Update domain
 router.put('/:id', (req, res) => {
-  console.log('Update domain request:', req.params.id);
-  console.log('Request body:', req.body);
-  
   const {
     domain,
     target_url,
@@ -206,7 +203,6 @@ router.put('/:id', (req, res) => {
     [domain, target_url, template_id || null, pass_query_params, require_gclid, mobile_only, block_pingable_ips, block_asn, lockdown_mode, lockdown_template_id || null, is_active, req.params.id],
     function(err) {
       if (err) {
-        console.error('Database error updating domain:', err);
         return res.status(500).json({ error: err.message });
       }
 
@@ -259,11 +255,9 @@ router.put('/:id', (req, res) => {
 
       Promise.all([...asnPromises, ...countryPromises, ...statePromises, ...ipPromises])
         .then(() => {
-          console.log('Domain updated successfully');
           res.json({ message: 'Domain updated successfully' });
         })
         .catch(err => {
-          console.error('Error updating blocks:', err);
           res.status(500).json({ error: err.message });
         });
     }
@@ -280,100 +274,8 @@ router.delete('/:id', (req, res) => {
       return res.status(404).json({ error: 'Domain not found' });
     }
     
-    // Delete associated Nginx config
-    const fs = require('fs');
-    const path = require('path');
-    const nginxConfigDir = process.env.NGINX_CONFIG_DIR || './nginx/sites-enabled';
-    const configPath = path.join(nginxConfigDir, `${req.params.id}.conf`);
-    
-    if (fs.existsSync(configPath)) {
-      fs.unlinkSync(configPath);
-    }
-    
     res.json({ message: 'Domain deleted successfully' });
   });
-});
-
-// Auto-configure Nginx (generate config + create symlink + reload)
-router.post('/:id/auto-configure-nginx', async (req, res) => {
-  try {
-    // Get domain info
-    const domain = await new Promise((resolve, reject) => {
-      db.get('SELECT * FROM domains WHERE id = ?', [req.params.id], (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
-
-    if (!domain) {
-      return res.status(404).json({ error: 'Domain not found' });
-    }
-
-    const nginxDir = path.resolve('./nginx/sites-enabled');
-    const configPath = path.join(nginxDir, `${domain.id}.conf`);
-    
-    // Ensure directory exists
-    if (!fs.existsSync(nginxDir)) {
-      fs.mkdirSync(nginxDir, { recursive: true });
-    }
-
-    // Generate Nginx config
-    const nginxConfig = `server {
-    listen 80;
-    server_name ${domain.domain};
-
-    location / {
-        proxy_pass http://localhost:3000/api/cloak/${domain.id};
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header CF-Connecting-IP $http_cf_connecting_ip;
-        proxy_set_header CF-IPCountry $http_cf_ipcountry;
-    }
-}`;
-
-    // Write config file
-    fs.writeFileSync(configPath, nginxConfig);
-
-    // Try to create symlink and reload nginx (requires sudo)
-    const symlinkPath = `/etc/nginx/sites-enabled/${domain.id}.conf`;
-    
-    try {
-      // Check if symlink already exists
-      if (!fs.existsSync(symlinkPath)) {
-        await execPromise(`sudo ln -s ${configPath} ${symlinkPath}`);
-      }
-      
-      // Test nginx config
-      await execPromise('sudo nginx -t');
-      
-      // Reload nginx
-      await execPromise('sudo systemctl reload nginx');
-      
-      res.json({ 
-        message: 'Nginx configured and reloaded successfully!',
-        configPath,
-        symlinkPath,
-        status: 'active'
-      });
-    } catch (execError) {
-      // If sudo commands fail, return manual instructions
-      res.json({
-        message: 'Config file created. Manual steps required (needs sudo):',
-        configPath,
-        commands: [
-          `sudo ln -s ${configPath} /etc/nginx/sites-enabled/`,
-          'sudo nginx -t',
-          'sudo systemctl reload nginx'
-        ],
-        status: 'manual_required',
-        error: execError.message
-      });
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
 });
 
 // Check if domain is proxied (accessible via proxy server)

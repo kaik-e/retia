@@ -6,6 +6,7 @@ import Templates from './pages/Templates'
 import Analytics from './pages/Analytics'
 import Logs from './pages/Logs'
 import ProxyManager from './pages/ProxyManager'
+import Users from './pages/Users'
 import Login from './pages/Login'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -29,6 +30,7 @@ function App() {
           <Route path="analytics/:id" element={<Analytics />} />
           <Route path="logs" element={<Logs />} />
           <Route path="proxy" element={<ProxyManager />} />
+          <Route path="users" element={<Users />} />
         </Route>
       </Routes>
     </Router>

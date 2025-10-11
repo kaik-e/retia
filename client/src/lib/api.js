@@ -48,9 +48,6 @@ export const api = {
     create: (data) => axios.post(`${API_BASE}/domains`, data),
     update: (id, data) => axios.put(`${API_BASE}/domains/${id}`, data),
     delete: (id) => axios.delete(`${API_BASE}/domains/${id}`),
-    generateNginx: (id) => axios.post(`${API_BASE}/domains/${id}/nginx`),
-    deleteNginx: (id) => axios.delete(`${API_BASE}/domains/${id}/nginx`),
-    autoConfigureNginx: (id) => axios.post(`${API_BASE}/domains/${id}/auto-configure-nginx`),
     getProxyStatus: (id) => axios.get(`${API_BASE}/domains/${id}/proxy-status`),
   },
 
@@ -59,5 +56,14 @@ export const api = {
     getLogs: (domainId, params) => axios.get(`${API_BASE}/analytics/${domainId}`, { params }),
     getSummary: (domainId, days) => axios.get(`${API_BASE}/analytics/${domainId}/summary`, { params: { days } }),
     clear: (domainId) => axios.delete(`${API_BASE}/analytics/${domainId}`),
+  },
+
+  // Users
+  users: {
+    getAll: () => axios.get(`${API_BASE}/users`),
+    getOne: (id) => axios.get(`${API_BASE}/users/${id}`),
+    create: (data) => axios.post(`${API_BASE}/users`, data),
+    update: (id, data) => axios.put(`${API_BASE}/users/${id}`, data),
+    delete: (id) => axios.delete(`${API_BASE}/users/${id}`),
   },
 };

@@ -41,20 +41,8 @@ export default function Domains() {
     }
   }
 
-  const copyNginxCommand = (domain) => {
-    const command = `sudo ln -s /path/to/c0alk/nginx/sites-enabled/${domain.id}.conf /etc/nginx/sites-enabled/ && sudo nginx -t && sudo systemctl reload nginx`
-    navigator.clipboard.writeText(command)
-    setAlert({
-      variant: 'success',
-      title: 'Copiado!',
-      description: 'Comando Nginx copiado para a área de transferência',
-      icon: Copy
-    })
-    setTimeout(() => setAlert(null), 3000)
-  }
 
   const toggleLockdown = async (domain) => {
-    console.log('toggleLockdown called with domain:', domain)
     const newLockdownState = !domain.lockdown_mode
     
     if (newLockdownState && !domain.lockdown_template_id) {

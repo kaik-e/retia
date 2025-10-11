@@ -14,13 +14,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // Ensure required directories exist
 const templatesDir = process.env.TEMPLATES_DIR || './data/templates';
-const nginxConfigDir = process.env.NGINX_CONFIG_DIR || './nginx/sites-enabled';
 
-[templatesDir, nginxConfigDir].forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-});
+if (!fs.existsSync(templatesDir)) {
+  fs.mkdirSync(templatesDir, { recursive: true });
+}
 
 // Initialize database
 require('./database');
@@ -35,6 +32,7 @@ app.use('/api/cloak', require('./routes/cloak')); // Cloaking must be public
 app.use('/api/templates', authenticateToken, require('./routes/templates'));
 app.use('/api/domains', authenticateToken, require('./routes/domains'));
 app.use('/api/analytics', authenticateToken, require('./routes/analytics'));
+app.use('/api/users', authenticateToken, require('./routes/users'));
 
 // Serve static files from templates directory
 app.use('/templates', express.static(templatesDir));
@@ -47,7 +45,8 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Retia API running on port ${PORT}`);
+  console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔒 Connected to database`);
 });

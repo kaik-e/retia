@@ -10,17 +10,17 @@ router.post('/login', (req, res) => {
     return res.status(400).json({ error: 'Username and password required' });
   }
 
-  const result = login(username, password);
-
-  if (result.success) {
-    res.json({
-      success: true,
-      token: result.token,
-      user: { username }
-    });
-  } else {
-    res.status(401).json({ error: result.error });
-  }
+  login(username, password, (result) => {
+    if (result.success) {
+      res.json({
+        success: true,
+        token: result.token,
+        user: result.user
+      });
+    } else {
+      res.status(401).json({ error: result.error });
+    }
+  });
 });
 
 // Verify token endpoint

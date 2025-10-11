@@ -81,8 +81,8 @@ sudo ufw enable
 pm2 list
 
 # Ver logs
-pm2 logs c0alk-api
-pm2 logs c0alk-proxy
+pm2 logs retia-api
+pm2 logs retia-proxy
 
 # Restart
 pm2 restart all
@@ -122,10 +122,10 @@ Redirect ou Template
 pm2 list
 
 # Ver logs
-pm2 logs c0alk-proxy
+pm2 logs retia-proxy
 
 # Restart
-pm2 restart c0alk-proxy
+pm2 restart retia-proxy
 ```
 
 ### Cloudflare não conecta

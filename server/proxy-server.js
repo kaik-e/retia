@@ -1,5 +1,4 @@
 const express = require('express');
-const vhost = require('vhost');
 const db = require('./database');
 
 const app = express();

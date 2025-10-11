@@ -97,13 +97,6 @@ export default function Login() {
               {loading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
-
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Credenciais padrão:</p>
-            <p className="font-mono text-xs mt-1">
-              Usuário: <strong>retia</strong> | Senha: <strong>Retia10@@</strong>
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>
