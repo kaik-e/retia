@@ -28,7 +28,7 @@ app.use((req, res, next) => {
       }
       
       // Redirect to cloaking endpoint
-      const cloakUrl = `http://localhost:3000/api/cloak/${domain.id}${req.url}`;
+      const cloakUrl = `http://127.0.0.1:3000/api/cloak/${domain.id}${req.url}`;
       
       // Forward the request
       const http = require('http');
