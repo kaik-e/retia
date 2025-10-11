@@ -186,7 +186,7 @@ router.put('/:id', (req, res) => {
     block_asn,
     lockdown_mode,
     lockdown_template_id,
-    is_active,
+    is_active = true,
     asn_blocks,
     country_blocks,
     state_blocks,

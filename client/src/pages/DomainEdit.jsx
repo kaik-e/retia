@@ -32,6 +32,7 @@ export default function DomainEdit() {
     block_asn: false,
     lockdown_mode: false,
     lockdown_template_id: '',
+    is_active: true,
   })
 
   const [asnBlocks, setAsnBlocks] = useState([])
@@ -75,6 +76,7 @@ export default function DomainEdit() {
         block_asn: domain.block_asn || false,
         lockdown_mode: domain.lockdown_mode || false,
         lockdown_template_id: domain.lockdown_template_id || '',
+        is_active: domain.is_active !== undefined ? domain.is_active : true,
       })
       setAsnBlocks(domain.asn_blocks || [])
       setCountryBlocks(domain.country_blocks || [])
