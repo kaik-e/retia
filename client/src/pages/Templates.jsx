@@ -83,8 +83,27 @@ export default function Templates() {
     }
   }
 
-  const handlePreview = (id) => {
-    window.open(`/api/templates/${id}/content`, '_blank')
+  const handlePreview = async (id) => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/templates/${id}/content`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to load template')
+      }
+      
+      const html = await response.text()
+      const blob = new Blob([html], { type: 'text/html' })
+      const url = URL.createObjectURL(blob)
+      window.open(url, '_blank')
+    } catch (error) {
+      console.error('Failed to preview template:', error)
+      alert('Falha ao visualizar template')
+    }
   }
 
   return (

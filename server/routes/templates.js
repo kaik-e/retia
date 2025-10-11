@@ -125,7 +125,7 @@ router.delete('/:id', (req, res) => {
   );
 });
 
-// Get template content
+// Get template content (public for preview)
 router.get('/:id/content', (req, res) => {
   db.get('SELECT file_path FROM templates WHERE id = ?', [req.params.id], (err, template) => {
     if (err) {

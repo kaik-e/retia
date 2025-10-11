@@ -24,6 +24,9 @@ require('./database');
 
 const { authenticateToken } = require('./middleware/auth');
 
+// Serve static files from templates directory (public for preview)
+app.use('/templates', express.static(templatesDir));
+
 // Public routes (no auth required)
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/cloak', require('./routes/cloak')); // Cloaking must be public
@@ -33,9 +36,6 @@ app.use('/api/templates', authenticateToken, require('./routes/templates'));
 app.use('/api/domains', authenticateToken, require('./routes/domains'));
 app.use('/api/analytics', authenticateToken, require('./routes/analytics'));
 app.use('/api/users', authenticateToken, require('./routes/users'));
-
-// Serve static files from templates directory
-app.use('/templates', express.static(templatesDir));
 
 // Serve frontend in production
 if (process.env.NODE_ENV === 'production') {
