@@ -26,7 +26,7 @@ export default function Logs() {
       
       // Get logs for all domains
       const logsPromises = domainsRes.data.map(domain =>
-        api.analytics.getLogs(domain.id, 100).catch(() => ({ data: [] }))
+        api.analytics.getLogs(domain.id, { limit: 100 }).catch(() => ({ data: [] }))
       )
       
       const logsResults = await Promise.all(logsPromises)
