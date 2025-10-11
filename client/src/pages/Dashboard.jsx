@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Globe, FileText, Activity, Plus, TrendingUp, Shield } from 'lucide-react'
+import { Globe, FileText, Activity, Plus, TrendingUp, Shield, Users } from 'lucide-react'
 import { api } from '@/lib/api'
 
 export default function Dashboard() {
@@ -12,9 +12,13 @@ export default function Dashboard() {
     templates: 0,
     totalRequests: 0,
     blockedRequests: 0,
+    users: 0,
   })
   const [recentDomains, setRecentDomains] = useState([])
   const [loading, setLoading] = useState(true)
+  
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
+  const isMaster = currentUser.role === 'master'
 
   useEffect(() => {
     loadDashboardData()
@@ -22,16 +26,24 @@ export default function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
-      const [domainsRes, templatesRes] = await Promise.all([
+      const promises = [
         api.domains.getAll(),
         api.templates.getAll(),
-      ])
+      ]
+      
+      if (isMaster) {
+        promises.push(api.users.getAll())
+      }
+
+      const results = await Promise.all(promises)
+      const [domainsRes, templatesRes, usersRes] = results
 
       setStats({
         domains: domainsRes.data.length,
         templates: templatesRes.data.length,
-        totalRequests: 0, // Would need to aggregate from analytics
+        totalRequests: 0,
         blockedRequests: 0,
+        users: usersRes ? usersRes.data.length : 0,
       })
 
       setRecentDomains(domainsRes.data.slice(0, 5))
@@ -46,9 +58,9 @@ export default function Dashboard() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Painel de Controle</h1>
         <p className="text-muted-foreground mt-2">
-          Overview of your cloaking system
+          Visão geral do seu sistema de cloaking
         </p>
       </div>
 
@@ -56,13 +68,13 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Domains</CardTitle>
+            <CardTitle className="text-sm font-medium">Total de Domínios</CardTitle>
             <Globe className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.domains}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Active cloaking domains
+              Domínios de cloaking ativos
             </p>
           </CardContent>
         </Card>
@@ -75,33 +87,33 @@ export default function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.templates}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Cloaked page templates
+              Templates de páginas
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+            <CardTitle className="text-sm font-medium">Total de Requisições</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalRequests}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              All time requests
+              Requisições totais
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Blocked</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">{isMaster ? 'Usuários' : 'Bloqueados'}</CardTitle>
+            {isMaster ? <Users className="h-4 w-4 text-muted-foreground" /> : <Shield className="h-4 w-4 text-muted-foreground" />}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.blockedRequests}</div>
+            <div className="text-2xl font-bold">{isMaster ? stats.users : stats.blockedRequests}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Filtered requests
+              {isMaster ? 'Usuários cadastrados' : 'Requisições filtradas'}
             </p>
           </CardContent>
         </Card>
@@ -112,13 +124,13 @@ export default function Dashboard() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Recent Domains</CardTitle>
-              <CardDescription>Your latest configured domains</CardDescription>
+              <CardTitle>Domínios Recentes</CardTitle>
+              <CardDescription>Seus últimos domínios configurados</CardDescription>
             </div>
             <Link to="/domains/new">
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
-                Add Domain
+                Adicionar Domínio
               </Button>
             </Link>
           </div>
@@ -126,11 +138,11 @@ export default function Dashboard() {
         <CardContent>
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">
-              Loading...
+              Carregando...
             </div>
           ) : recentDomains.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No domains configured yet
+              Nenhum domínio configurado ainda
             </div>
           ) : (
             <div className="space-y-4">
@@ -145,7 +157,7 @@ export default function Dashboard() {
                       <span className="font-medium">{domain.domain}</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Target: {domain.target_url}
+                      Destino: {domain.target_url}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -157,7 +169,7 @@ export default function Dashboard() {
                     )}
                     <Link to={`/domains/${domain.id}`}>
                       <Button variant="outline" size="sm">
-                        Edit
+                        Editar
                       </Button>
                     </Link>
                     <Link to={`/analytics/${domain.id}`}>
@@ -180,10 +192,10 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Globe className="w-5 h-5" />
-                Create New Domain
+                Criar Novo Domínio
               </CardTitle>
               <CardDescription>
-                Set up a new cloaking domain with custom rules
+                Configure um novo domínio de cloaking com regras personalizadas
               </CardDescription>
             </CardHeader>
           </Link>
@@ -194,10 +206,10 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="w-5 h-5" />
-                Upload Template
+                Enviar Template
               </CardTitle>
               <CardDescription>
-                Add a new HTML template for cloaked pages
+                Adicione um novo template HTML para páginas de cloaking
               </CardDescription>
             </CardHeader>
           </Link>

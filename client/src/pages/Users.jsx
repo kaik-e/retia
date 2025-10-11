@@ -7,11 +7,14 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Users as UsersIcon, Plus, Edit, Trash2, CheckCircle, XCircle, Shield, User, AlertCircle } from 'lucide-react'
+import { Users as UsersIcon, Plus, Edit, Trash2, CheckCircle, XCircle, Shield, User, AlertCircle, Globe } from 'lucide-react'
 import { api } from '@/lib/api'
+import { Link } from 'react-router-dom'
 
 export default function Users() {
   const [users, setUsers] = useState([])
+  const [domains, setDomains] = useState([])
+  const [userDomains, setUserDomains] = useState([])
   const [loading, setLoading] = useState(true)
   const [alert, setAlert] = useState(null)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -29,26 +32,40 @@ export default function Users() {
 
   useEffect(() => {
     if (isMaster) {
-      loadUsers()
+      loadData()
     }
   }, [isMaster])
 
-  const loadUsers = async () => {
+  const loadData = async () => {
     try {
-      const response = await api.users.getAll()
-      setUsers(response.data)
+      const [usersRes, domainsRes] = await Promise.all([
+        api.users.getAll(),
+        api.domains.getAll()
+      ])
+      
+      setUsers(usersRes.data)
+      setDomains(domainsRes.data)
+      
+      // Group domains by user
+      const grouped = usersRes.data.map(user => ({
+        user,
+        domains: domainsRes.data.filter(d => d.user_id === user.id || !d.user_id)
+      }))
+      setUserDomains(grouped)
     } catch (error) {
-      console.error('Failed to load users:', error)
+      console.error('Failed to load data:', error)
       setAlert({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Falha ao carregar usuários',
+        description: 'Falha ao carregar dados',
         icon: XCircle
       })
     } finally {
       setLoading(false)
     }
   }
+
+  const loadUsers = loadData
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -250,6 +267,61 @@ export default function Users() {
           <AlertTitle>{alert.title}</AlertTitle>
           <AlertDescription>{alert.description}</AlertDescription>
         </Alert>
+      )}
+
+      {/* User Domains */}
+      {!loading && userDomains.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Domínios por Usuário</CardTitle>
+            <CardDescription>Visualização de domínios de cada usuário</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {userDomains.map(({ user, domains }) => (
+                <div key={user.id} className="space-y-3">
+                  <div className="flex items-center gap-3 pb-2 border-b">
+                    {user.role === 'master' ? (
+                      <Shield className="w-4 h-4 text-primary" />
+                    ) : (
+                      <User className="w-4 h-4 text-muted-foreground" />
+                    )}
+                    <span className="font-semibold">{user.username}</span>
+                    <Badge variant={user.role === 'master' ? 'default' : 'secondary'}>
+                      {user.role}
+                    </Badge>
+                    {user.is_active === 0 && (
+                      <Badge variant="destructive">Inativo</Badge>
+                    )}
+                    <span className="text-sm text-muted-foreground ml-auto">
+                      {domains.length} {domains.length === 1 ? 'domínio' : 'domínios'}
+                    </span>
+                  </div>
+                  {domains.length > 0 ? (
+                    <div className="grid gap-2 pl-7">
+                      {domains.map(domain => (
+                        <div key={domain.id} className="flex items-center justify-between text-sm p-2 rounded hover:bg-accent">
+                          <div className="flex items-center gap-2">
+                            <Globe className="w-3 h-3 text-muted-foreground" />
+                            <span>{domain.domain}</span>
+                            {domain.is_active === 0 && (
+                              <Badge variant="outline" className="text-xs">Inativo</Badge>
+                            )}
+                          </div>
+                          <Link to={`/domains/${domain.id}`}>
+                            <Button variant="ghost" size="sm">Ver</Button>
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground pl-7">Nenhum domínio configurado</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Users List */}
