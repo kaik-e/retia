@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Globe, FileText, Activity, Plus, TrendingUp, Shield, Users } from 'lucide-react'
+import { Globe, FileText, Activity, Plus, TrendingUp, Shield, Users, ExternalLink } from 'lucide-react'
 import { api } from '@/lib/api'
 
 export default function Dashboard() {
@@ -155,6 +155,14 @@ export default function Dashboard() {
                     <div className="flex items-center gap-2">
                       <Globe className="w-4 h-4 text-muted-foreground" />
                       <span className="font-medium">{domain.domain}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => window.open(`https://${domain.domain}`, '_blank')}
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </Button>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       Destino: {domain.target_url}

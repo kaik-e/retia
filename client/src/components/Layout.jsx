@@ -29,9 +29,8 @@ export default function Layout() {
       <div className="fixed inset-y-0 left-0 w-64 bg-card border-r border-border">
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center gap-2 h-16 px-6 border-b border-border">
-            <Shield className="w-8 h-8 text-primary" />
-            <span className="text-xl font-bold">retia</span>
+          <div className="flex items-center justify-center h-16 px-6 border-b border-border">
+            <img src="/logo.png" alt="Retia" className="w-10 h-10" />
           </div>
 
           {/* Navigation */}

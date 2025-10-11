@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Globe, Plus, Trash2, Edit, TrendingUp, Copy, Power, Lock, Unlock, CheckCircle, XCircle } from 'lucide-react'
+import { Globe, Plus, Trash2, Edit, TrendingUp, Copy, Power, Lock, Unlock, CheckCircle, XCircle, ExternalLink } from 'lucide-react'
 import { api } from '@/lib/api'
 import { DomainQuickStats } from '@/components/DomainQuickStats'
 
@@ -218,6 +218,14 @@ export default function Domains() {
                     <div className="flex items-center gap-3">
                       <Globe className="w-5 h-5 text-primary" />
                       <CardTitle>{domain.domain}</CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => window.open(`https://${domain.domain}`, '_blank')}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </Button>
                       {domain.lockdown_mode && (
                         <Badge variant="destructive" className="gap-1">
                           <Lock className="w-3 h-3" />
