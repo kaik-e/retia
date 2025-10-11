@@ -27,8 +27,8 @@ router.get('/:domainId', async (req, res) => {
     const domain = await new Promise((resolve, reject) => {
       db.get(
         `SELECT d.*, 
-                t.filename as template_filename,
-                lt.filename as lockdown_template_filename
+                t.file_path as template_filename,
+                lt.file_path as lockdown_template_filename
          FROM domains d
          LEFT JOIN templates t ON d.template_id = t.id
          LEFT JOIN templates lt ON d.lockdown_template_id = lt.id

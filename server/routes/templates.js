@@ -62,21 +62,21 @@ router.post('/', upload.single('template'), (req, res) => {
 
   const id = uuidv4();
   const name = req.body.name || path.basename(req.file.originalname, '.html');
-  const filename = req.file.filename;
+  const file_path = req.file.filename;
 
   db.run(
-    'INSERT INTO templates (id, name, filename) VALUES (?, ?, ?)',
-    [id, name, filename],
+    'INSERT INTO templates (id, name, file_path) VALUES (?, ?, ?)',
+    [id, name, file_path],
     function(err) {
       if (err) {
         // Delete uploaded file if database insert fails
-        fs.unlinkSync(path.join(templatesDir, filename));
+        fs.unlinkSync(path.join(templatesDir, file_path));
         return res.status(500).json({ error: err.message });
       }
       res.json({
         id,
         name,
-        filename,
+        file_path,
         created_at: new Date().toISOString()
       });
     }
@@ -98,7 +98,7 @@ router.delete('/:id', (req, res) => {
       }
 
       // Get template info to delete file
-      db.get('SELECT filename FROM templates WHERE id = ?', [req.params.id], (err, template) => {
+      db.get('SELECT file_path FROM templates WHERE id = ?', [req.params.id], (err, template) => {
         if (err) {
           return res.status(500).json({ error: err.message });
         }
@@ -113,7 +113,7 @@ router.delete('/:id', (req, res) => {
           }
 
           // Delete file
-          const filePath = path.join(templatesDir, template.filename);
+          const filePath = path.join(templatesDir, template.file_path);
           if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
           }
@@ -127,7 +127,7 @@ router.delete('/:id', (req, res) => {
 
 // Get template content
 router.get('/:id/content', (req, res) => {
-  db.get('SELECT filename FROM templates WHERE id = ?', [req.params.id], (err, template) => {
+  db.get('SELECT file_path FROM templates WHERE id = ?', [req.params.id], (err, template) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -135,7 +135,7 @@ router.get('/:id/content', (req, res) => {
       return res.status(404).json({ error: 'Template not found' });
     }
 
-    const filePath = path.join(templatesDir, template.filename);
+    const filePath = path.join(templatesDir, template.file_path);
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: 'Template file not found' });
     }
