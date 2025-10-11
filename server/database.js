@@ -59,6 +59,7 @@ function initDatabase() {
     db.run(`
       CREATE TABLE IF NOT EXISTS domains (
         id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
         domain TEXT NOT NULL UNIQUE,
         target_url TEXT NOT NULL,
         template_id TEXT,
@@ -72,6 +73,7 @@ function initDatabase() {
         is_active BOOLEAN DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id),
         FOREIGN KEY (template_id) REFERENCES templates(id),
         FOREIGN KEY (lockdown_template_id) REFERENCES templates(id)
       )
@@ -80,6 +82,7 @@ function initDatabase() {
     // Add missing columns if they don't exist (for existing databases)
     db.run(`ALTER TABLE domains ADD COLUMN block_asn BOOLEAN DEFAULT 0`, () => {});
     db.run(`ALTER TABLE domains ADD COLUMN is_active BOOLEAN DEFAULT 1`, () => {});
+    db.run(`ALTER TABLE domains ADD COLUMN user_id TEXT DEFAULT 'master-user-id'`, () => {});
 
     // ASN blocks table
     db.run(`

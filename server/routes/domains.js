@@ -8,16 +8,41 @@ const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
 
+// Helper function to check domain ownership
+const checkDomainOwnership = (domainId, userId, role) => {
+  return new Promise((resolve, reject) => {
+    db.get('SELECT user_id FROM domains WHERE id = ?', [domainId], (err, domain) => {
+      if (err) return reject(err);
+      if (!domain) return reject(new Error('Domain not found'));
+      if (role !== 'master' && domain.user_id !== userId) {
+        return reject(new Error('Access denied'));
+      }
+      resolve(domain);
+    });
+  });
+};
+
 // Get all domains
 router.get('/', (req, res) => {
-  const query = `
+  const userId = req.user.id;
+  const isMaster = req.user.role === 'master';
+  
+  const query = isMaster ? `
     SELECT d.*, t.name as template_name
     FROM domains d
     LEFT JOIN templates t ON d.template_id = t.id
     ORDER BY d.created_at DESC
+  ` : `
+    SELECT d.*, t.name as template_name
+    FROM domains d
+    LEFT JOIN templates t ON d.template_id = t.id
+    WHERE d.user_id = ?
+    ORDER BY d.created_at DESC
   `;
   
-  db.all(query, [], (err, rows) => {
+  const params = isMaster ? [] : [userId];
+  
+  db.all(query, params, (err, rows) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -40,6 +65,11 @@ router.get('/:id', (req, res) => {
     }
     if (!domain) {
       return res.status(404).json({ error: 'Domain not found' });
+    }
+    
+    // Check ownership (master can see all)
+    if (req.user.role !== 'master' && domain.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     // Get ASN blocks
@@ -105,12 +135,13 @@ router.post('/', (req, res) => {
   }
 
   const id = uuidv4();
+  const userId = req.user.id;
 
   db.run(
-    `INSERT INTO domains (id, domain, target_url, template_id, pass_query_params, 
+    `INSERT INTO domains (id, user_id, domain, target_url, template_id, pass_query_params, 
      require_gclid, mobile_only, block_pingable_ips, block_asn, lockdown_mode, lockdown_template_id, is_active) 
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, domain, target_url, template_id || null, pass_query_params, require_gclid, mobile_only, block_pingable_ips, block_asn, lockdown_mode, lockdown_template_id || null, is_active],
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, userId, domain, target_url, template_id || null, pass_query_params, require_gclid, mobile_only, block_pingable_ips, block_asn, lockdown_mode, lockdown_template_id || null, is_active],
     function(err) {
       if (err) {
         return res.status(500).json({ error: err.message });
@@ -174,7 +205,14 @@ router.post('/', (req, res) => {
 });
 
 // Update domain
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
+  try {
+    // Check ownership first
+    await checkDomainOwnership(req.params.id, req.user.id, req.user.role);
+  } catch (error) {
+    return res.status(error.message === 'Domain not found' ? 404 : 403).json({ error: error.message });
+  }
+  
   const {
     domain,
     target_url,
@@ -265,7 +303,14 @@ router.put('/:id', (req, res) => {
 });
 
 // Delete domain
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
+  try {
+    // Check ownership first
+    await checkDomainOwnership(req.params.id, req.user.id, req.user.role);
+  } catch (error) {
+    return res.status(error.message === 'Domain not found' ? 404 : 403).json({ error: error.message });
+  }
+  
   db.run('DELETE FROM domains WHERE id = ?', [req.params.id], function(err) {
     if (err) {
       return res.status(500).json({ error: err.message });
