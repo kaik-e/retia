@@ -248,7 +248,7 @@ export default function DomainEdit() {
           <CardHeader>
             <div className="flex items-center gap-2">
               {formData.lockdown_mode && <AlertTriangle className="w-5 h-5 text-destructive" />}
-              <CardTitle>Modo de Bloqueio Total</CardTitle>
+              <CardTitle>Modo Lockdown</CardTitle>
             </div>
             <CardDescription>
               Modo de emergência - bloqueia TODO o tráfego e mostra template
@@ -258,7 +258,7 @@ export default function DomainEdit() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <div className="flex items-center">
-                  <Label>Ativar Bloqueio Total</Label>
+                  <Label>Ativar Lockdown</Label>
                   <InfoTooltip>
                     Quando ativado, TODOS os visitantes verão o template de bloqueio. Nenhum tráfego será redirecionado. Use para emergências ou manutenção.
                   </InfoTooltip>
@@ -277,7 +277,7 @@ export default function DomainEdit() {
 
             {formData.lockdown_mode && (
               <div className="space-y-2 p-4 bg-destructive/10 border border-destructive/20 rounded-md">
-                <Label htmlFor="lockdown_template">Template de Bloqueio *</Label>
+                <Label htmlFor="lockdown_template">Template Lockdown *</Label>
                 <select
                   id="lockdown_template"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

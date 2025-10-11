@@ -31,13 +31,13 @@ export const t = {
   cloakedTemplateDesc: 'Página HTML mostrada para visitantes bloqueados',
   
   // Lockdown Mode
-  lockdownMode: 'Modo de Bloqueio Total',
+  lockdownMode: 'Modo Lockdown',
   lockdownDesc: 'Modo de emergência - bloqueia TODO o tráfego e mostra template',
-  enableLockdown: 'Ativar Bloqueio Total',
+  enableLockdown: 'Ativar Lockdown',
   lockdownTooltip: 'Quando ativado, TODOS os visitantes verão o template de bloqueio. Nenhum tráfego será redirecionado. Use para emergências ou manutenção.',
   lockdownBlockAll: 'Bloquear todo o tráfego independente dos filtros',
-  lockdownTemplate: 'Template de Bloqueio Total',
-  lockdownWarning: 'Todos os visitantes verão este template até o bloqueio ser desativado',
+  lockdownTemplate: 'Template Lockdown',
+  lockdownWarning: 'Todos os visitantes verão este template até o lockdown ser desativado',
   
   // Cloaking Options
   cloakingOptions: 'Opções de Cloaking',
