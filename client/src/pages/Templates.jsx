@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { FileText, Upload, Trash2, Eye, File } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { FileText, Upload, Trash2, Eye, File, CheckCircle, XCircle } from 'lucide-react'
 import { api } from '@/lib/api'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 
 export default function Templates() {
   const [templates, setTemplates] = useState([])
@@ -14,6 +16,8 @@ export default function Templates() {
   const [uploading, setUploading] = useState(false)
   const [selectedFile, setSelectedFile] = useState(null)
   const [templateName, setTemplateName] = useState('')
+  const [alert, setAlert] = useState(null)
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, name: null })
   const fileInputRef = useRef(null)
 
   useEffect(() => {
@@ -62,24 +66,47 @@ export default function Templates() {
 
       // Reload templates
       await loadTemplates()
-      alert('Template uploaded successfully!')
+      setAlert({
+        variant: 'success',
+        title: 'Sucesso!',
+        description: 'Template enviado com sucesso',
+        icon: CheckCircle
+      })
+      setTimeout(() => setAlert(null), 3000)
     } catch (error) {
       console.error('Failed to upload template:', error)
-      alert('Failed to upload template: ' + (error.response?.data?.error || error.message))
+      setAlert({
+        variant: 'destructive',
+        title: 'Erro',
+        description: error.response?.data?.error || error.message || 'Falha ao enviar template',
+        icon: XCircle
+      })
     } finally {
       setUploading(false)
     }
   }
 
-  const handleDelete = async (id, name) => {
-    if (!confirm(`Are you sure you want to delete "${name}"?`)) return
-
+  const handleDelete = async () => {
     try {
-      await api.templates.delete(id)
-      setTemplates(templates.filter(t => t.id !== id))
+      await api.templates.delete(deleteDialog.id)
+      setTemplates(templates.filter(t => t.id !== deleteDialog.id))
+      setAlert({
+        variant: 'success',
+        title: 'Sucesso!',
+        description: 'Template excluído com sucesso',
+        icon: CheckCircle
+      })
+      setTimeout(() => setAlert(null), 3000)
     } catch (error) {
       console.error('Failed to delete template:', error)
-      alert('Failed to delete template: ' + (error.response?.data?.error || error.message))
+      setAlert({
+        variant: 'destructive',
+        title: 'Erro',
+        description: error.response?.data?.error || error.message || 'Falha ao excluir template',
+        icon: XCircle
+      })
+    } finally {
+      setDeleteDialog({ open: false, id: null, name: null })
     }
   }
 
@@ -102,7 +129,12 @@ export default function Templates() {
       window.open(url, '_blank')
     } catch (error) {
       console.error('Failed to preview template:', error)
-      alert('Falha ao visualizar template')
+      setAlert({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Falha ao visualizar template',
+        icon: XCircle
+      })
     }
   }
 
@@ -115,6 +147,15 @@ export default function Templates() {
           Gerencie templates HTML para páginas de cloaking
         </p>
       </div>
+
+      {/* Alert */}
+      {alert && (
+        <Alert variant={alert.variant}>
+          {alert.icon && <alert.icon className="h-4 w-4" />}
+          <AlertTitle>{alert.title}</AlertTitle>
+          <AlertDescription>{alert.description}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Upload Form */}
       <Card>
@@ -258,7 +299,7 @@ export default function Templates() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => handleDelete(template.id, template.name)}
+                      onClick={() => setDeleteDialog({ open: true, id: template.id, name: template.name })}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -285,6 +326,18 @@ export default function Templates() {
           </ul>
         </CardContent>
       </Card>
+      
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => !open && setDeleteDialog({ open: false, id: null, name: null })}
+        title="Excluir Template"
+        description={`Tem certeza que deseja excluir o template "${deleteDialog.name}"? Esta ação não pode ser desfeita.`}
+        onConfirm={handleDelete}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
+      />
     </div>
   )
 }

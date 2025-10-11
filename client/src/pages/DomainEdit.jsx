@@ -26,8 +26,8 @@ export default function DomainEdit() {
     target_url: '',
     template_id: '',
     pass_query_params: true,
-    require_gclid: false,
-    mobile_only: false,
+    require_gclid: true,
+    mobile_only: true,
     block_pingable_ips: false,
     block_asn: false,
     lockdown_mode: false,
@@ -82,7 +82,8 @@ export default function DomainEdit() {
       setIpBlocks(domain.ip_blocks || [])
     } catch (error) {
       console.error('Failed to load domain:', error)
-      setAlert({ variant: 'destructive', title: 'Erro', description: 'Falha ao carregar domínio', icon: XCircle })
+      const errorMsg = error.response?.data?.error || error.message || 'Falha ao carregar domínio'
+      setAlert({ variant: 'destructive', title: 'Erro', description: errorMsg, icon: XCircle })
     }
   }
 
@@ -110,8 +111,11 @@ export default function DomainEdit() {
         console.log('Create response:', response)
       }
 
+      console.log('Domain saved successfully, redirecting...')
       setAlert({ variant: 'success', title: 'Sucesso!', description: 'Domínio salvo com sucesso', icon: CheckCircle })
-      setTimeout(() => navigate('/domains'), 1500)
+      
+      // Redirect immediately
+      navigate('/domains')
     } catch (error) {
       console.error('Failed to save domain:', error)
       console.error('Error details:', error.response?.data)

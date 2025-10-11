@@ -5,14 +5,16 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Globe, Plus, Trash2, Edit, TrendingUp, Copy, Power, Lock, Unlock, CheckCircle, XCircle, ExternalLink } from 'lucide-react'
+import { Globe, Plus, Trash2, Edit, TrendingUp, Power, Lock, Unlock, CheckCircle, XCircle, ExternalLink } from 'lucide-react'
 import { api } from '@/lib/api'
 import { DomainQuickStats } from '@/components/DomainQuickStats'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 
 export default function Domains() {
   const [domains, setDomains] = useState([])
   const [loading, setLoading] = useState(true)
   const [alert, setAlert] = useState(null)
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, domain: null })
 
   useEffect(() => {
     loadDomains()
@@ -29,15 +31,27 @@ export default function Domains() {
     }
   }
 
-  const handleDelete = async (id, domain) => {
-    if (!confirm(`Are you sure you want to delete ${domain}?`)) return
-
+  const handleDelete = async () => {
     try {
-      await api.domains.delete(id)
-      setDomains(domains.filter(d => d.id !== id))
+      await api.domains.delete(deleteDialog.id)
+      setDomains(domains.filter(d => d.id !== deleteDialog.id))
+      setAlert({
+        variant: 'success',
+        title: 'Sucesso!',
+        description: 'Domínio excluído com sucesso',
+        icon: CheckCircle
+      })
+      setTimeout(() => setAlert(null), 3000)
     } catch (error) {
       console.error('Failed to delete domain:', error)
-      alert('Failed to delete domain')
+      setAlert({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Falha ao excluir domínio',
+        icon: XCircle
+      })
+    } finally {
+      setDeleteDialog({ open: false, id: null, domain: null })
     }
   }
 
@@ -248,8 +262,29 @@ export default function Domains() {
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-2">
+                    {/* Main Action Buttons */}
+                    <div className="flex items-center gap-2">
+                    <Link to={`/analytics/${domain.id}`}>
+                      <Button variant="ghost" size="sm" title="View Analytics">
+                        <TrendingUp className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                      <Link to={`/domains/${domain.id}`}>
+                        <Button variant="outline" size="sm">
+                          <Edit className="w-4 h-4 mr-2" />
+                          Editar
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setDeleteDialog({ open: true, id: domain.id, domain: domain.domain })}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                     {/* Quick Action Buttons */}
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2">
                       <Button
                         variant={domain.lockdown_mode ? "destructive" : "outline"}
                         size="sm"
@@ -267,34 +302,6 @@ export default function Domains() {
                       >
                         <Power className="w-4 h-4 mr-1" />
                         {domain.is_active === false ? "Ativar" : "Desativar"}
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => copyNginxCommand(domain)}
-                      title="Copy Nginx setup command"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                    <Link to={`/analytics/${domain.id}`}>
-                      <Button variant="ghost" size="sm" title="View Analytics">
-                        <TrendingUp className="w-4 h-4" />
-                      </Button>
-                    </Link>
-                      <Link to={`/domains/${domain.id}`}>
-                        <Button variant="outline" size="sm">
-                          <Edit className="w-4 h-4 mr-2" />
-                          Editar
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(domain.id, domain.domain)}
-                      >
-                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
@@ -327,6 +334,18 @@ export default function Domains() {
           ))}
         </div>
       )}
+      
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => !open && setDeleteDialog({ open: false, id: null, domain: null })}
+        title="Excluir Domínio"
+        description={`Tem certeza que deseja excluir o domínio "${deleteDialog.domain}"? Esta ação não pode ser desfeita.`}
+        onConfirm={handleDelete}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
+      />
     </div>
   )
 }

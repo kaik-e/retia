@@ -38,7 +38,7 @@ npm install -g pm2
 # Iniciar API (porta 3000)
 pm2 start server/index.js --name "retia-api"
 
-# Iniciar Proxy (porta 8080)
+# Iniciar Proxy (porta 80 para Cloudflare)
 pm2 start server/proxy-server.js --name "retia-proxy"
 
 # Salvar configuração

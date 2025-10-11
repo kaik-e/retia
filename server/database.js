@@ -66,14 +66,20 @@ function initDatabase() {
         require_gclid BOOLEAN DEFAULT 0,
         mobile_only BOOLEAN DEFAULT 0,
         block_pingable_ips BOOLEAN DEFAULT 0,
+        block_asn BOOLEAN DEFAULT 0,
         lockdown_mode BOOLEAN DEFAULT 0,
         lockdown_template_id TEXT,
+        is_active BOOLEAN DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (template_id) REFERENCES templates(id),
         FOREIGN KEY (lockdown_template_id) REFERENCES templates(id)
       )
     `);
+    
+    // Add missing columns if they don't exist (for existing databases)
+    db.run(`ALTER TABLE domains ADD COLUMN block_asn BOOLEAN DEFAULT 0`, () => {});
+    db.run(`ALTER TABLE domains ADD COLUMN is_active BOOLEAN DEFAULT 1`, () => {});
 
     // ASN blocks table
     db.run(`
