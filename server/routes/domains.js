@@ -335,7 +335,34 @@ router.get('/:id/proxy-status', async (req, res) => {
       return res.status(404).json({ error: 'Domain not found' });
     }
 
-    // Try to make a request to the domain through the proxy
+    // First check DNS resolution
+    const dns = require('dns').promises;
+    let dnsConfigured = false;
+    let dnsMessage = '';
+    
+    try {
+      const addresses = await dns.resolve4(domain.domain);
+      const vpsIp = process.env.VPS_IP || '185.245.183.247';
+      
+      // Check if any of the resolved IPs are Cloudflare IPs (188.114.x.x or 172.x.x.x range)
+      const hasCloudflare = addresses.some(ip => 
+        ip.startsWith('188.114.') || 
+        ip.startsWith('172.') ||
+        ip.startsWith('104.') ||
+        ip === vpsIp
+      );
+      
+      if (hasCloudflare) {
+        dnsConfigured = true;
+        dnsMessage = 'DNS configured correctly';
+      } else {
+        dnsMessage = `DNS not pointing to Cloudflare or VPS. Current IPs: ${addresses.join(', ')}`;
+      }
+    } catch (dnsError) {
+      dnsMessage = `DNS not configured: ${dnsError.message}`;
+    }
+
+    // Then check if proxy responds
     const http = require('http');
     
     const options = {
@@ -353,10 +380,19 @@ router.get('/:id/proxy-status', async (req, res) => {
       // Consume response data to free up memory
       proxyRes.resume();
       
+      const proxyWorking = proxyRes.statusCode < 500;
+      const fullyProxied = dnsConfigured && proxyWorking;
+      
       res.json({
-        proxied: proxyRes.statusCode < 500,
+        proxied: fullyProxied,
+        proxyWorking,
+        dnsConfigured,
         statusCode: proxyRes.statusCode,
-        message: proxyRes.statusCode < 500 ? 'Domain is proxied and working' : 'Proxy error'
+        message: fullyProxied 
+          ? 'Domain is fully proxied and working' 
+          : !dnsConfigured 
+            ? dnsMessage
+            : 'Proxy responding but DNS not configured'
       });
     });
 
