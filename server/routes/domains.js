@@ -193,8 +193,6 @@ router.post('/', (req, res) => {
 
       Promise.all([...asnPromises, ...countryPromises, ...statePromises, ...ipPromises])
         .then(() => {
-          // Generate Nginx config
-          generateNginxConfig(id);
           res.json({ id, domain, message: 'Domain created successfully' });
         })
         .catch(err => {
