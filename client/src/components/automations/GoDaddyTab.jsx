@@ -179,9 +179,13 @@ export function GoDaddyTab() {
                 onChange={(e) => setApiSecret(e.target.value)}
                 required
               />
-              <p className="text-xs text-muted-foreground">
-                Credenciais de produção (OTE não funcionará)
-              </p>
+              <Alert className="mt-2 border-red-200 bg-red-50">
+                <AlertTriangle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800 text-xs">
+                  <strong>IMPORTANTE:</strong> Use credenciais de <strong>PRODUCTION</strong>, não OTE (teste).
+                  A API Key precisa ter permissão de leitura em Domains.
+                </AlertDescription>
+              </Alert>
             </div>
 
             <Button type="submit" disabled={saving || !apiKey || !apiSecret} className="w-full">

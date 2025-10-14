@@ -5,12 +5,11 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Globe, Plus, Trash2, Edit, TrendingUp, Power, Lock, Unlock, CheckCircle, XCircle, ExternalLink, Cloud, Package } from 'lucide-react'
+import { Globe, Plus, Trash2, Edit, TrendingUp, Power, Lock, Unlock, CheckCircle, XCircle, ExternalLink, Cloud } from 'lucide-react'
 import { api } from '@/lib/api'
 import { DomainQuickStats } from '@/components/DomainQuickStats'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { CloudflareImportDialog } from '@/components/CloudflareImportDialog'
-import { GoDaddyImportDialog } from '@/components/GoDaddyImportDialog'
 
 export default function Domains() {
   const [domains, setDomains] = useState([])
@@ -18,7 +17,6 @@ export default function Domains() {
   const [alert, setAlert] = useState(null)
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, domain: null })
   const [cloudflareDialog, setCloudflareDialog] = useState(false)
-  const [godaddyDialog, setGodaddyDialog] = useState(false)
 
   useEffect(() => {
     loadDomains()
@@ -183,11 +181,7 @@ export default function Domains() {
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setCloudflareDialog(true)}>
             <Cloud className="w-4 h-4 mr-2" />
-            Cloudflare
-          </Button>
-          <Button variant="outline" onClick={() => setGodaddyDialog(true)}>
-            <Package className="w-4 h-4 mr-2" />
-            GoDaddy
+            Importar do Cloudflare
           </Button>
           <Link to="/domains/new">
             <Button>
@@ -371,22 +365,6 @@ export default function Domains() {
             variant: 'default',
             title: 'Sucesso!',
             description: 'Domínio importado do Cloudflare com sucesso',
-            icon: CheckCircle
-          })
-          setTimeout(() => setAlert(null), 5000)
-        }}
-      />
-      
-      {/* GoDaddy Import Dialog */}
-      <GoDaddyImportDialog
-        open={godaddyDialog}
-        onOpenChange={setGodaddyDialog}
-        onSuccess={() => {
-          loadDomains()
-          setAlert({
-            variant: 'default',
-            title: 'Sucesso!',
-            description: 'Domínio importado do GoDaddy. Nameservers alterados para Cloudflare.',
             icon: CheckCircle
           })
           setTimeout(() => setAlert(null), 5000)
