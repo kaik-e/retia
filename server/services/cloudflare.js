@@ -101,7 +101,7 @@ class CloudflareService {
     }
   }
 
-  // Create WAF rule to skip bot detection for AdsBot-Google
+  // Create WAF rule to skip all security checks for AdsBot-Google
   async createWAFRule(zoneId) {
     try {
       // First, create a filter (send as array)
@@ -112,13 +112,28 @@ class CloudflareService {
       
       const filterId = filterResponse.data.result[0].id;
       
-      // Then, create the firewall rule using the filter
+      // Then, create the firewall rule with skip action for all security features
       const ruleResponse = await this.client.post(`/zones/${zoneId}/firewall/rules`, [{
         filter: {
           id: filterId
         },
-        action: 'allow',
-        description: 'Allow AdsBot-Google',
+        action: 'skip',
+        action_parameters: {
+          products: [
+            'waf',           // Skip WAF rules
+            'rateLimit',     // Skip rate limiting
+            'bic',           // Skip Browser Integrity Check
+            'hot',           // Skip Hotlink Protection
+            'securityLevel', // Skip Security Level
+            'uaBlock',       // Skip User Agent Blocking
+            'zoneLockdown',  // Skip Zone Lockdown
+            'ipReputationCategories' // Skip IP Reputation
+          ],
+          rules: {
+            'all': true    // Skip all rules
+          }
+        },
+        description: 'Skip all security checks for AdsBot-Google',
         priority: 1
       }]);
       
