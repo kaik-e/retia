@@ -88,9 +88,24 @@ function initDatabase() {
     db.run(`ALTER TABLE users ADD COLUMN cloudflare_api_token TEXT`, () => {});
     db.run(`ALTER TABLE users ADD COLUMN cloudflare_account_id TEXT`, () => {});
     
-    // Add GoDaddy columns to users table
+    // Add GoDaddy columns to users table (deprecated, kept for migration)
     db.run(`ALTER TABLE users ADD COLUMN godaddy_api_key TEXT`, () => {});
     db.run(`ALTER TABLE users ADD COLUMN godaddy_api_secret TEXT`, () => {});
+    
+    // API Credentials table (for multiple named credentials)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS api_credentials (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        credentials TEXT NOT NULL,
+        is_default BOOLEAN DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
 
     // ASN blocks table
     db.run(`

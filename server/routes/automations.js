@@ -5,6 +5,145 @@ const CloudflareService = require('../services/cloudflare');
 const GoDaddyService = require('../services/godaddy');
 const { v4: uuidv4 } = require('uuid');
 
+// Helper to get credentials by ID
+const getCredentials = (credentialId, userId) => {
+  return new Promise((resolve, reject) => {
+    db.get(
+      'SELECT * FROM api_credentials WHERE id = ? AND user_id = ?',
+      [credentialId, userId],
+      (err, row) => {
+        if (err) reject(err);
+        else if (!row) reject(new Error('Credentials not found'));
+        else resolve(row);
+      }
+    );
+  });
+};
+
+// ============================================
+// CREDENTIALS MANAGEMENT
+// ============================================
+
+// List all credentials for user
+router.get('/credentials', (req, res) => {
+  const { provider } = req.query;
+  
+  let query = 'SELECT id, name, provider, is_default, created_at FROM api_credentials WHERE user_id = ?';
+  const params = [req.user.id];
+  
+  if (provider) {
+    query += ' AND provider = ?';
+    params.push(provider);
+  }
+  
+  query += ' ORDER BY is_default DESC, created_at DESC';
+  
+  db.all(query, params, (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
+  });
+});
+
+// Add new credential
+router.post('/credentials', async (req, res) => {
+  const { name, provider, credentials, isDefault } = req.body;
+  
+  if (!name || !provider || !credentials) {
+    return res.status(400).json({ error: 'Name, provider, and credentials are required' });
+  }
+  
+  // Validate credentials based on provider
+  try {
+    if (provider === 'cloudflare') {
+      const cf = new CloudflareService(credentials.apiToken);
+      await cf.verifyToken();
+    } else if (provider === 'godaddy') {
+      const gd = new GoDaddyService(credentials.apiKey, credentials.apiSecret);
+      await gd.verifyCredentials();
+    } else {
+      return res.status(400).json({ error: 'Invalid provider' });
+    }
+  } catch (error) {
+    return res.status(400).json({ error: `Invalid credentials: ${error.message}` });
+  }
+  
+  const id = uuidv4();
+  
+  db.serialize(() => {
+    // If this is default, unset other defaults for this provider
+    if (isDefault) {
+      db.run(
+        'UPDATE api_credentials SET is_default = 0 WHERE user_id = ? AND provider = ?',
+        [req.user.id, provider]
+      );
+    }
+    
+    // Insert new credential
+    db.run(
+      `INSERT INTO api_credentials (id, user_id, name, provider, credentials, is_default) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [id, req.user.id, name, provider, JSON.stringify(credentials), isDefault ? 1 : 0],
+      (err) => {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        res.json({ id, name, provider, isDefault, message: 'Credential added successfully' });
+      }
+    );
+  });
+});
+
+// Update credential
+router.put('/credentials/:id', async (req, res) => {
+  const { name, isDefault } = req.body;
+  
+  try {
+    const credential = await getCredentials(req.params.id, req.user.id);
+    
+    db.serialize(() => {
+      // If setting as default, unset other defaults for this provider
+      if (isDefault) {
+        db.run(
+          'UPDATE api_credentials SET is_default = 0 WHERE user_id = ? AND provider = ?',
+          [req.user.id, credential.provider]
+        );
+      }
+      
+      // Update credential
+      db.run(
+        'UPDATE api_credentials SET name = ?, is_default = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [name || credential.name, isDefault ? 1 : 0, req.params.id],
+        (err) => {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
+          res.json({ message: 'Credential updated successfully' });
+        }
+      );
+    });
+  } catch (error) {
+    res.status(404).json({ error: error.message });
+  }
+});
+
+// Delete credential
+router.delete('/credentials/:id', async (req, res) => {
+  try {
+    await getCredentials(req.params.id, req.user.id);
+    
+    db.run('DELETE FROM api_credentials WHERE id = ?', [req.params.id], (err) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ message: 'Credential deleted successfully' });
+    });
+  } catch (error) {
+    res.status(404).json({ error: error.message });
+  }
+});
+
 // ============================================
 // CLOUDFLARE ROUTES
 // ============================================
@@ -70,18 +209,51 @@ router.delete('/cloudflare/settings', (req, res) => {
 // List Cloudflare zones
 router.get('/cloudflare/zones', async (req, res) => {
   try {
-    const user = await new Promise((resolve, reject) => {
-      db.get('SELECT cloudflare_api_token FROM users WHERE id = ?', [req.user.id], (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
+    const { credentialId } = req.query;
+    let apiToken;
+    
+    if (credentialId) {
+      // Use specific credential
+      const credential = await getCredentials(credentialId, req.user.id);
+      if (credential.provider !== 'cloudflare') {
+        return res.status(400).json({ error: 'Invalid credential provider' });
+      }
+      const creds = JSON.parse(credential.credentials);
+      apiToken = creds.apiToken;
+    } else {
+      // Use legacy or default credential
+      const user = await new Promise((resolve, reject) => {
+        db.get('SELECT cloudflare_api_token FROM users WHERE id = ?', [req.user.id], (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        });
       });
-    });
-
-    if (!user?.cloudflare_api_token) {
-      return res.status(400).json({ error: 'Cloudflare API token not configured' });
+      
+      if (!user?.cloudflare_api_token) {
+        // Try to get default credential
+        const defaultCred = await new Promise((resolve, reject) => {
+          db.get(
+            'SELECT * FROM api_credentials WHERE user_id = ? AND provider = ? AND is_default = 1',
+            [req.user.id, 'cloudflare'],
+            (err, row) => {
+              if (err) reject(err);
+              else resolve(row);
+            }
+          );
+        });
+        
+        if (!defaultCred) {
+          return res.status(400).json({ error: 'Cloudflare API token not configured' });
+        }
+        
+        const creds = JSON.parse(defaultCred.credentials);
+        apiToken = creds.apiToken;
+      } else {
+        apiToken = user.cloudflare_api_token;
+      }
     }
 
-    const cf = new CloudflareService(user.cloudflare_api_token);
+    const cf = new CloudflareService(apiToken);
     const zones = await cf.listZones();
 
     res.json(zones);

@@ -69,12 +69,19 @@ export const api = {
 
   // Automations (Cloudflare & GoDaddy)
   automations: {
+    // Credentials
+    credentials: {
+      list: (provider) => axios.get(`${API_BASE}/automations/credentials`, { params: { provider } }),
+      add: (data) => axios.post(`${API_BASE}/automations/credentials`, data),
+      update: (id, data) => axios.put(`${API_BASE}/automations/credentials/${id}`, data),
+      delete: (id) => axios.delete(`${API_BASE}/automations/credentials/${id}`),
+    },
     // Cloudflare
     cloudflare: {
       getSettings: () => axios.get(`${API_BASE}/automations/cloudflare/settings`),
       saveSettings: (data) => axios.post(`${API_BASE}/automations/cloudflare/settings`, data),
       deleteSettings: () => axios.delete(`${API_BASE}/automations/cloudflare/settings`),
-      listZones: () => axios.get(`${API_BASE}/automations/cloudflare/zones`),
+      listZones: (credentialId) => axios.get(`${API_BASE}/automations/cloudflare/zones`, { params: { credentialId } }),
       import: (data) => axios.post(`${API_BASE}/automations/cloudflare/import`, data),
     },
     // GoDaddy
@@ -82,7 +89,7 @@ export const api = {
       getSettings: () => axios.get(`${API_BASE}/automations/godaddy/settings`),
       saveSettings: (data) => axios.post(`${API_BASE}/automations/godaddy/settings`, data),
       deleteSettings: () => axios.delete(`${API_BASE}/automations/godaddy/settings`),
-      listDomains: () => axios.get(`${API_BASE}/automations/godaddy/domains`),
+      listDomains: (credentialId) => axios.get(`${API_BASE}/automations/godaddy/domains`, { params: { credentialId } }),
       getDomain: (domain) => axios.get(`${API_BASE}/automations/godaddy/domains/${domain}`),
       import: (data) => axios.post(`${API_BASE}/automations/godaddy/import`, data),
     },
