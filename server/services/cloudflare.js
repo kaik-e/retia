@@ -101,43 +101,40 @@ class CloudflareService {
     }
   }
 
-  // Create WAF rule to skip all security checks for AdsBot-Google
+  // Create WAF rule to skip all security checks for AdsBot-Google using Rulesets API
   async createWAFRule(zoneId) {
     try {
-      // First, create a filter (send as array)
-      const filterResponse = await this.client.post(`/zones/${zoneId}/filters`, [{
-        expression: '(http.user_agent contains "AdsBot-Google")',
-        description: 'AdsBot-Google filter'
-      }]);
+      // Get the zone's http_request_firewall_custom ruleset
+      const rulesetsResponse = await this.client.get(`/zones/${zoneId}/rulesets`);
+      let rulesetId = rulesetsResponse.data.result.find(r => r.phase === 'http_request_firewall_custom')?.id;
       
-      const filterId = filterResponse.data.result[0].id;
+      // If ruleset doesn't exist, create it
+      if (!rulesetId) {
+        const createRulesetResponse = await this.client.post(`/zones/${zoneId}/rulesets`, {
+          name: 'Custom Firewall Rules',
+          kind: 'zone',
+          phase: 'http_request_firewall_custom'
+        });
+        rulesetId = createRulesetResponse.data.result.id;
+      }
       
-      // Then, create the firewall rule with skip action for all security features
-      const ruleResponse = await this.client.post(`/zones/${zoneId}/firewall/rules`, [{
-        filter: {
-          id: filterId
-        },
+      // Add rule to skip all security checks for AdsBot-Google
+      const ruleResponse = await this.client.post(`/zones/${zoneId}/rulesets/${rulesetId}/rules`, {
         action: 'skip',
         action_parameters: {
-          products: [
-            'waf',           // Skip WAF rules
-            'rateLimit',     // Skip rate limiting
-            'bic',           // Skip Browser Integrity Check
-            'hot',           // Skip Hotlink Protection
-            'securityLevel', // Skip Security Level
-            'uaBlock',       // Skip User Agent Blocking
-            'zoneLockdown',  // Skip Zone Lockdown
-            'ipReputationCategories' // Skip IP Reputation
-          ],
-          rules: {
-            'all': true    // Skip all rules
-          }
+          ruleset: 'current',
+          phases: [
+            'http_ratelimit',
+            'http_request_firewall_managed',
+            'http_request_sbfm'
+          ]
         },
+        expression: '(http.user_agent contains "AdsBot-Google")',
         description: 'Skip all security checks for AdsBot-Google',
-        priority: 1
-      }]);
+        enabled: true
+      });
       
-      return { success: true, data: ruleResponse.data.result[0] };
+      return { success: true, data: ruleResponse.data.result };
     } catch (error) {
       const errorCode = error.response?.data?.errors?.[0]?.code;
       const errorMessage = error.response?.data?.errors?.[0]?.message;
