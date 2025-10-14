@@ -104,22 +104,47 @@ class CloudflareService {
   // Create WAF rule to skip bot detection for AdsBot-Google
   async createWAFRule(zoneId) {
     try {
-      const response = await this.client.post(`/zones/${zoneId}/firewall/rules`, {
-        filter: {
-          expression: '(http.user_agent contains "AdsBot-Google")',
-          paused: false
-        },
-        action: 'skip',
-        action_parameters: {
-          ruleset: 'current'
-        },
-        description: 'Skip bot detection for AdsBot-Google'
+      // First, create a filter
+      const filterResponse = await this.client.post(`/zones/${zoneId}/filters`, {
+        expression: '(http.user_agent contains "AdsBot-Google")',
+        description: 'AdsBot-Google filter'
       });
-      return response.data.result;
+      
+      const filterId = filterResponse.data.result.id;
+      
+      // Then, create the firewall rule using the filter
+      const ruleResponse = await this.client.post(`/zones/${zoneId}/firewall/rules`, [{
+        filter: {
+          id: filterId
+        },
+        action: 'allow',
+        description: 'Allow AdsBot-Google'
+      }]);
+      
+      return { success: true, data: ruleResponse.data.result };
     } catch (error) {
-      // WAF rules might not be available on all plans, so we don't throw
-      console.warn('Could not create WAF rule (might require higher plan):', error.message);
-      return null;
+      // WAF rules require Pro plan or higher
+      const errorCode = error.response?.data?.errors?.[0]?.code;
+      const errorMessage = error.response?.data?.errors?.[0]?.message;
+      
+      console.error('WAF Rule creation error:', {
+        code: errorCode,
+        message: errorMessage,
+        fullError: error.response?.data
+      });
+      
+      if (errorCode === 1004 || errorMessage?.includes('not entitled')) {
+        return { 
+          success: false, 
+          error: 'WAF rules require Cloudflare Pro plan or higher',
+          requiresUpgrade: true
+        };
+      }
+      
+      return { 
+        success: false, 
+        error: errorMessage || error.message 
+      };
     }
   }
 

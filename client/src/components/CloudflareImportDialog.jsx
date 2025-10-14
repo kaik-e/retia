@@ -65,14 +65,17 @@ export function CloudflareImportDialog({ open, onOpenChange, onSuccess }) {
     setStep('importing')
 
     try {
-      await api.automations.cloudflare.import({
+      const response = await api.automations.cloudflare.import({
         zoneId: selectedZone.id,
         domain: selectedZone.name,
         targetUrl,
         templateId: templateId || null
       })
 
-      onSuccess?.()
+      // Check if WAF creation failed
+      const wafWarning = response.data?.cloudflare?.waf?.requiresUpgrade
+      
+      onSuccess?.(wafWarning)
       onOpenChange(false)
       
       // Reset state
