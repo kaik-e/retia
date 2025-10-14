@@ -5,14 +5,15 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Cloud, CheckCircle, XCircle, ExternalLink, Loader2 } from 'lucide-react'
+import { Package, CheckCircle, XCircle, Loader2, AlertTriangle, Cloud } from 'lucide-react'
 import { api } from '@/lib/api'
 
-export function CloudflareImportDialog({ open, onOpenChange, onSuccess }) {
+export function GoDaddyImportDialog({ open, onOpenChange, onSuccess }) {
   const [step, setStep] = useState('check') // check, select, configure, importing
-  const [hasToken, setHasToken] = useState(false)
-  const [zones, setZones] = useState([])
-  const [selectedZone, setSelectedZone] = useState(null)
+  const [hasCredentials, setHasCredentials] = useState(false)
+  const [hasCloudflare, setHasCloudflare] = useState(false)
+  const [domains, setDomains] = useState([])
+  const [selectedDomain, setSelectedDomain] = useState(null)
   const [targetUrl, setTargetUrl] = useState('')
   const [templateId, setTemplateId] = useState('')
   const [templates, setTemplates] = useState([])
@@ -21,41 +22,44 @@ export function CloudflareImportDialog({ open, onOpenChange, onSuccess }) {
 
   useEffect(() => {
     if (open) {
-      checkCloudflareSettings()
+      checkSettings()
     }
   }, [open])
 
-  const checkCloudflareSettings = async () => {
+  const checkSettings = async () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await api.automations.cloudflare.getSettings()
-      setHasToken(response.data.hasToken)
+      const [godaddyRes, cloudflareRes, templatesRes] = await Promise.all([
+        api.automations.godaddy.getSettings(),
+        api.automations.cloudflare.getSettings(),
+        api.templates.getAll()
+      ])
       
-      if (response.data.hasToken) {
-        // Load zones and templates
-        const [zonesRes, templatesRes] = await Promise.all([
-          api.automations.cloudflare.listZones(),
-          api.templates.getAll()
-        ])
-        setZones(zonesRes.data)
-        setTemplates(templatesRes.data)
+      setHasCredentials(godaddyRes.data.hasCredentials)
+      setHasCloudflare(cloudflareRes.data.hasToken)
+      setTemplates(templatesRes.data)
+      
+      if (godaddyRes.data.hasCredentials && cloudflareRes.data.hasToken) {
+        // Load domains
+        const domainsRes = await api.automations.godaddy.listDomains()
+        setDomains(domainsRes.data)
         setStep('select')
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load Cloudflare settings')
+      setError(err.response?.data?.error || 'Failed to load settings')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleZoneSelect = (zone) => {
-    setSelectedZone(zone)
+  const handleDomainSelect = (domain) => {
+    setSelectedDomain(domain)
     setStep('configure')
   }
 
   const handleImport = async () => {
-    if (!selectedZone || !targetUrl) {
+    if (!selectedDomain || !targetUrl) {
       setError('Please fill all required fields')
       return
     }
@@ -65,9 +69,8 @@ export function CloudflareImportDialog({ open, onOpenChange, onSuccess }) {
     setStep('importing')
 
     try {
-      await api.automations.cloudflare.import({
-        zoneId: selectedZone.id,
-        domain: selectedZone.name,
+      await api.automations.godaddy.import({
+        domain: selectedDomain.domain,
         targetUrl,
         templateId: templateId || null
       })
@@ -78,7 +81,7 @@ export function CloudflareImportDialog({ open, onOpenChange, onSuccess }) {
       // Reset state
       setTimeout(() => {
         setStep('check')
-        setSelectedZone(null)
+        setSelectedDomain(null)
         setTargetUrl('')
         setTemplateId('')
       }, 500)
@@ -100,15 +103,25 @@ export function CloudflareImportDialog({ open, onOpenChange, onSuccess }) {
       )
     }
 
-    if (!hasToken && step === 'check') {
+    if ((!hasCredentials || !hasCloudflare) && step === 'check') {
       return (
         <div className="space-y-4">
-          <Alert>
-            <Cloud className="h-4 w-4" />
-            <AlertDescription>
-              Você precisa configurar seu Cloudflare API Token primeiro
-            </AlertDescription>
-          </Alert>
+          {!hasCredentials && (
+            <Alert variant="destructive">
+              <Package className="h-4 w-4" />
+              <AlertDescription>
+                Você precisa configurar suas credenciais GoDaddy primeiro
+              </AlertDescription>
+            </Alert>
+          )}
+          {!hasCloudflare && (
+            <Alert variant="destructive">
+              <Cloud className="h-4 w-4" />
+              <AlertDescription>
+                Você precisa configurar seu Cloudflare API Token primeiro
+              </AlertDescription>
+            </Alert>
+          )}
           <Button
             className="w-full"
             onClick={() => {
@@ -116,8 +129,7 @@ export function CloudflareImportDialog({ open, onOpenChange, onSuccess }) {
               window.location.href = '/automations'
             }}
           >
-            <Cloud className="w-4 h-4 mr-2" />
-            Ir para Configurações Cloudflare
+            Ir para Configurações
           </Button>
         </div>
       )
@@ -127,28 +139,28 @@ export function CloudflareImportDialog({ open, onOpenChange, onSuccess }) {
       return (
         <div className="space-y-4">
           <div>
-            <Label>Selecione um domínio do Cloudflare</Label>
+            <Label>Selecione um domínio do GoDaddy</Label>
             <p className="text-sm text-muted-foreground mt-1">
-              {zones.length} domínio{zones.length !== 1 ? 's' : ''} encontrado{zones.length !== 1 ? 's' : ''}
+              {domains.length} domínio{domains.length !== 1 ? 's' : ''} encontrado{domains.length !== 1 ? 's' : ''}
             </p>
           </div>
 
           <div className="space-y-2 max-h-96 overflow-y-auto">
-            {zones.map((zone) => (
+            {domains.map((domain) => (
               <button
-                key={zone.id}
-                onClick={() => handleZoneSelect(zone)}
+                key={domain.domainId}
+                onClick={() => handleDomainSelect(domain)}
                 className="w-full p-4 border rounded-lg hover:bg-accent transition-colors text-left"
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium">{zone.name}</div>
+                    <div className="font-medium">{domain.domain}</div>
                     <div className="text-sm text-muted-foreground">
-                      Status: {zone.status}
+                      Expira: {new Date(domain.expires).toLocaleDateString()}
                     </div>
                   </div>
-                  <Badge variant={zone.status === 'active' ? 'default' : 'secondary'}>
-                    {zone.status}
+                  <Badge variant={domain.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                    {domain.status}
                   </Badge>
                 </div>
               </button>
@@ -161,12 +173,20 @@ export function CloudflareImportDialog({ open, onOpenChange, onSuccess }) {
     if (step === 'configure') {
       return (
         <div className="space-y-4">
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
             <div className="flex items-center gap-2">
-              <Cloud className="w-4 h-4 text-blue-600" />
-              <span className="font-medium text-blue-900">{selectedZone.name}</span>
+              <Package className="w-4 h-4 text-orange-600" />
+              <span className="font-medium text-orange-900">{selectedDomain.domain}</span>
             </div>
           </div>
+
+          <Alert className="border-yellow-200 bg-yellow-50">
+            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-800 text-xs">
+              Os nameservers serão alterados automaticamente para Cloudflare. 
+              A propagação pode levar até 48h.
+            </AlertDescription>
+          </Alert>
 
           <div className="space-y-2">
             <Label htmlFor="targetUrl">URL de Destino *</Label>
@@ -211,7 +231,7 @@ export function CloudflareImportDialog({ open, onOpenChange, onSuccess }) {
               variant="outline"
               onClick={() => {
                 setStep('select')
-                setSelectedZone(null)
+                setSelectedDomain(null)
                 setError(null)
               }}
               className="flex-1"
@@ -230,7 +250,7 @@ export function CloudflareImportDialog({ open, onOpenChange, onSuccess }) {
                 </>
               ) : (
                 <>
-                  <Cloud className="w-4 h-4 mr-2" />
+                  <Package className="w-4 h-4 mr-2" />
                   Importar
                 </>
               )}
@@ -245,8 +265,8 @@ export function CloudflareImportDialog({ open, onOpenChange, onSuccess }) {
         <div className="flex flex-col items-center justify-center py-8">
           <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
           <p className="text-muted-foreground mb-2">Configurando domínio...</p>
-          <p className="text-xs text-muted-foreground text-center">
-            Criando DNS record, configurando SSL e adicionando ao cloaker
+          <p className="text-xs text-muted-foreground text-center max-w-sm">
+            Mudando nameservers, criando DNS no Cloudflare, configurando SSL e adicionando ao cloaker
           </p>
         </div>
       )
@@ -258,11 +278,11 @@ export function CloudflareImportDialog({ open, onOpenChange, onSuccess }) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Cloud className="w-5 h-5" />
-            Importar do Cloudflare
+            <Package className="w-5 h-5" />
+            Importar do GoDaddy
           </DialogTitle>
           <DialogDescription>
-            Auto-configure um domínio do Cloudflare com DNS, SSL e proxy
+            Auto-configure um domínio do GoDaddy mudando nameservers para Cloudflare
           </DialogDescription>
         </DialogHeader>
         {renderContent()}

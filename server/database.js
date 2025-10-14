@@ -87,6 +87,10 @@ function initDatabase() {
     // Add Cloudflare columns to users table
     db.run(`ALTER TABLE users ADD COLUMN cloudflare_api_token TEXT`, () => {});
     db.run(`ALTER TABLE users ADD COLUMN cloudflare_account_id TEXT`, () => {});
+    
+    // Add GoDaddy columns to users table
+    db.run(`ALTER TABLE users ADD COLUMN godaddy_api_key TEXT`, () => {});
+    db.run(`ALTER TABLE users ADD COLUMN godaddy_api_secret TEXT`, () => {});
 
     // ASN blocks table
     db.run(`

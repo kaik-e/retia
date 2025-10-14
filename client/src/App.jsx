@@ -7,7 +7,7 @@ import Analytics from './pages/Analytics'
 import Logs from './pages/Logs'
 import ProxyManager from './pages/ProxyManager'
 import Users from './pages/Users'
-import CloudflareSettings from './pages/CloudflareSettings'
+import Automations from './pages/Automations'
 import Login from './pages/Login'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -32,7 +32,7 @@ function App() {
           <Route path="logs" element={<Logs />} />
           <Route path="proxy" element={<ProxyManager />} />
           <Route path="users" element={<Users />} />
-          <Route path="cloudflare" element={<CloudflareSettings />} />
+          <Route path="automations" element={<Automations />} />
         </Route>
       </Routes>
     </Router>
