@@ -253,16 +253,25 @@ export function CloudflareTab() {
           <ol className="list-decimal list-inside space-y-2">
             <li>Acesse o Cloudflare Dashboard</li>
             <li>Vá em "My Profile" → "API Tokens"</li>
-            <li>Clique em "Create Token"</li>
-            <li>Use o template "Edit zone DNS" ou crie um custom com permissões:
+            <li>Clique em "Create Token" → "Custom Token"</li>
+            <li>Configure as permissões necessárias:
               <ul className="list-disc list-inside ml-6 mt-1 space-y-1">
+                <li><strong>Account - Account Rulesets - Edit</strong> (para criar regras WAF)</li>
                 <li>Zone - DNS - Edit</li>
                 <li>Zone - Zone Settings - Edit</li>
                 <li>Zone - Zone - Read</li>
               </ul>
             </li>
+            <li>Em "Zone Resources" selecione "Include - All zones"</li>
+            <li>Clique em "Continue to summary" → "Create Token"</li>
             <li>Copie o token e cole acima</li>
           </ol>
+          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-xs text-yellow-900">
+              <strong>⚠️ Importante:</strong> A permissão <strong>"Account Rulesets - Edit"</strong> é necessária 
+              para criar regras de segurança automaticamente que permitem o AdsBot-Google passar sem bloqueios.
+            </p>
+          </div>
           <div className="pt-2">
             <a
               href="https://dash.cloudflare.com/profile/api-tokens"
