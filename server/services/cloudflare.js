@@ -104,13 +104,13 @@ class CloudflareService {
   // Create WAF rule to skip bot detection for AdsBot-Google
   async createWAFRule(zoneId) {
     try {
-      // First, create a filter
-      const filterResponse = await this.client.post(`/zones/${zoneId}/filters`, {
+      // First, create a filter (send as array)
+      const filterResponse = await this.client.post(`/zones/${zoneId}/filters`, [{
         expression: '(http.user_agent contains "AdsBot-Google")',
         description: 'AdsBot-Google filter'
-      });
+      }]);
       
-      const filterId = filterResponse.data.result.id;
+      const filterId = filterResponse.data.result[0].id;
       
       // Then, create the firewall rule using the filter
       const ruleResponse = await this.client.post(`/zones/${zoneId}/firewall/rules`, [{
@@ -118,12 +118,12 @@ class CloudflareService {
           id: filterId
         },
         action: 'allow',
-        description: 'Allow AdsBot-Google'
+        description: 'Allow AdsBot-Google',
+        priority: 1
       }]);
       
-      return { success: true, data: ruleResponse.data.result };
+      return { success: true, data: ruleResponse.data.result[0] };
     } catch (error) {
-      // WAF rules require Pro plan or higher
       const errorCode = error.response?.data?.errors?.[0]?.code;
       const errorMessage = error.response?.data?.errors?.[0]?.message;
       
@@ -132,6 +132,15 @@ class CloudflareService {
         message: errorMessage,
         fullError: error.response?.data
       });
+      
+      // Check for authentication/permission errors
+      if (errorCode === 10000 || errorCode === 10014) {
+        return { 
+          success: false, 
+          error: 'Token needs "Zone.Firewall Services - Edit" permission',
+          requiresPermission: true
+        };
+      }
       
       if (errorCode === 1004 || errorMessage?.includes('not entitled')) {
         return { 
