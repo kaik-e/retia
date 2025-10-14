@@ -36,6 +36,7 @@ app.use('/api/templates', authenticateToken, require('./routes/templates'));
 app.use('/api/domains', authenticateToken, require('./routes/domains'));
 app.use('/api/analytics', authenticateToken, require('./routes/analytics'));
 app.use('/api/users', authenticateToken, require('./routes/users'));
+app.use('/api/cloudflare', authenticateToken, require('./routes/cloudflare'));
 
 // Serve frontend in production
 if (process.env.NODE_ENV === 'production') {

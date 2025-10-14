@@ -83,6 +83,10 @@ function initDatabase() {
     db.run(`ALTER TABLE domains ADD COLUMN block_asn BOOLEAN DEFAULT 0`, () => {});
     db.run(`ALTER TABLE domains ADD COLUMN is_active BOOLEAN DEFAULT 1`, () => {});
     db.run(`ALTER TABLE domains ADD COLUMN user_id TEXT DEFAULT 'master-user-id'`, () => {});
+    
+    // Add Cloudflare columns to users table
+    db.run(`ALTER TABLE users ADD COLUMN cloudflare_api_token TEXT`, () => {});
+    db.run(`ALTER TABLE users ADD COLUMN cloudflare_account_id TEXT`, () => {});
 
     // ASN blocks table
     db.run(`

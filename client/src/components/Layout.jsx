@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Globe, FileText, Activity, Server, Shield, LogOut, User, Users } from 'lucide-react'
+import { LayoutDashboard, Globe, FileText, Activity, Server, Shield, LogOut, User, Users, Cloud } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
@@ -9,6 +9,7 @@ const navigation = [
   { name: 'Templates', href: '/templates', icon: FileText },
   { name: 'Logs', href: '/logs', icon: Activity },
   { name: 'Proxy', href: '/proxy', icon: Server },
+  { name: 'Cloudflare', href: '/cloudflare', icon: Cloud },
   { name: 'Usuários', href: '/users', icon: Users, masterOnly: true },
 ]
 

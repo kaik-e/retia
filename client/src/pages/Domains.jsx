@@ -5,16 +5,18 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Globe, Plus, Trash2, Edit, TrendingUp, Power, Lock, Unlock, CheckCircle, XCircle, ExternalLink } from 'lucide-react'
+import { Globe, Plus, Trash2, Edit, TrendingUp, Power, Lock, Unlock, CheckCircle, XCircle, ExternalLink, Cloud } from 'lucide-react'
 import { api } from '@/lib/api'
 import { DomainQuickStats } from '@/components/DomainQuickStats'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { CloudflareImportDialog } from '@/components/CloudflareImportDialog'
 
 export default function Domains() {
   const [domains, setDomains] = useState([])
   const [loading, setLoading] = useState(true)
   const [alert, setAlert] = useState(null)
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, domain: null })
+  const [importDialog, setImportDialog] = useState(false)
 
   useEffect(() => {
     loadDomains()
@@ -176,12 +178,18 @@ export default function Domains() {
             Gerencie seus domínios de cloaking e configurações
           </p>
         </div>
-        <Link to="/domains/new">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Adicionar Domínio
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setImportDialog(true)}>
+            <Cloud className="w-4 h-4 mr-2" />
+            Importar do Cloudflare
           </Button>
-        </Link>
+          <Link to="/domains/new">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Adicionar Domínio
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Alert */}
@@ -345,6 +353,22 @@ export default function Domains() {
         confirmText="Excluir"
         cancelText="Cancelar"
         variant="destructive"
+      />
+      
+      {/* Cloudflare Import Dialog */}
+      <CloudflareImportDialog
+        open={importDialog}
+        onOpenChange={setImportDialog}
+        onSuccess={() => {
+          loadDomains()
+          setAlert({
+            variant: 'default',
+            title: 'Sucesso!',
+            description: 'Domínio importado e configurado automaticamente',
+            icon: CheckCircle
+          })
+          setTimeout(() => setAlert(null), 5000)
+        }}
       />
     </div>
   )

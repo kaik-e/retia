@@ -66,4 +66,15 @@ export const api = {
     update: (id, data) => axios.put(`${API_BASE}/users/${id}`, data),
     delete: (id) => axios.delete(`${API_BASE}/users/${id}`),
   },
+
+  // Cloudflare
+  cloudflare: {
+    getSettings: () => axios.get(`${API_BASE}/cloudflare/settings`),
+    saveSettings: (data) => axios.post(`${API_BASE}/cloudflare/settings`, data),
+    deleteSettings: () => axios.delete(`${API_BASE}/cloudflare/settings`),
+    listZones: () => axios.get(`${API_BASE}/cloudflare/zones`),
+    getZone: (zoneId) => axios.get(`${API_BASE}/cloudflare/zones/${zoneId}`),
+    autoSetup: (data) => axios.post(`${API_BASE}/cloudflare/auto-setup`, data),
+    listDNS: (zoneId) => axios.get(`${API_BASE}/cloudflare/zones/${zoneId}/dns`),
+  },
 };
