@@ -212,11 +212,22 @@ function serveCloakedContent(res, domain, reason) {
     const templatePath = path.join(templatesDir, domain.template_filename);
     
     if (fs.existsSync(templatePath)) {
-      return res.sendFile(path.resolve(templatePath));
+      try {
+        // Set proper headers for HTML content
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        
+        // Read file and send as string to avoid sendFile issues
+        const htmlContent = fs.readFileSync(templatePath, 'utf8');
+        return res.send(htmlContent);
+      } catch (error) {
+        console.error('Error serving template:', error);
+        // Fall through to default page
+      }
     }
   }
   
   // Default cloaked page
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.send(`
     <!DOCTYPE html>
     <html>
