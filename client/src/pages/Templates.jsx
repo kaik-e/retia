@@ -110,13 +110,11 @@ export default function Templates() {
       const blob = new Blob([htmlContent], { type: 'text/html' })
       console.log('[Templates] Blob created:', blob.size, 'bytes')
       
-      const file = new File([blob], `${pasteTemplateName}.html`, { type: 'text/html' })
-      console.log('[Templates] File created:', file.name, file.size, file.type)
-      
+      // Create FormData directly with blob (avoid File constructor issues)
       const formData = new FormData()
-      formData.append('template', file)
+      formData.append('template', blob, `${pasteTemplateName}.html`)
       formData.append('name', pasteTemplateName)
-      console.log('[Templates] FormData created, calling API...')
+      console.log('[Templates] FormData created with blob, calling API...')
 
       const response = await api.templates.upload(formData)
       console.log('[Templates] API response:', response)
