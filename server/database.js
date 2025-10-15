@@ -49,11 +49,16 @@ function initDatabase() {
     db.run(`
       CREATE TABLE IF NOT EXISTS templates (
         id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
         name TEXT NOT NULL,
         filename TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
       )
     `);
+    
+    // Add user_id to existing templates table if it doesn't exist
+    db.run(`ALTER TABLE templates ADD COLUMN user_id TEXT DEFAULT 'master-user-id'`, () => {});
 
     // Domains table
     db.run(`
