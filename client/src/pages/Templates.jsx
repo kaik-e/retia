@@ -5,7 +5,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { FileText, Upload, Trash2, Eye, File, CheckCircle, XCircle } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
+import { FileText, Upload, Trash2, Eye, File, CheckCircle, XCircle, Code } from 'lucide-react'
 import { api } from '@/lib/api'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
@@ -16,6 +18,8 @@ export default function Templates() {
   const [uploading, setUploading] = useState(false)
   const [selectedFile, setSelectedFile] = useState(null)
   const [templateName, setTemplateName] = useState('')
+  const [htmlContent, setHtmlContent] = useState('')
+  const [pasteTemplateName, setPasteTemplateName] = useState('')
   const [alert, setAlert] = useState(null)
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, name: null })
   const fileInputRef = useRef(null)
@@ -79,6 +83,48 @@ export default function Templates() {
         variant: 'destructive',
         title: 'Erro',
         description: error.response?.data?.error || error.message || 'Falha ao enviar template',
+        icon: XCircle
+      })
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handlePasteCreate = async (e) => {
+    e.preventDefault()
+    if (!htmlContent.trim() || !pasteTemplateName.trim()) return
+
+    setUploading(true)
+    try {
+      // Create a Blob from HTML content
+      const blob = new Blob([htmlContent], { type: 'text/html' })
+      const file = new File([blob], `${pasteTemplateName}.html`, { type: 'text/html' })
+      
+      const formData = new FormData()
+      formData.append('template', file)
+      formData.append('name', pasteTemplateName)
+
+      await api.templates.upload(formData)
+      
+      // Reset form
+      setHtmlContent('')
+      setPasteTemplateName('')
+
+      // Reload templates
+      await loadTemplates()
+      setAlert({
+        variant: 'success',
+        title: 'Sucesso!',
+        description: 'Template criado com sucesso',
+        icon: CheckCircle
+      })
+      setTimeout(() => setAlert(null), 3000)
+    } catch (error) {
+      console.error('Failed to create template:', error)
+      setAlert({
+        variant: 'destructive',
+        title: 'Erro',
+        description: error.response?.data?.error || error.message || 'Falha ao criar template',
         icon: XCircle
       })
     } finally {
@@ -157,21 +203,35 @@ export default function Templates() {
         </Alert>
       )}
 
-      {/* Upload Form */}
+      {/* Create Template Form */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <CardTitle>Upload de Template</CardTitle>
+            <CardTitle>Criar Template</CardTitle>
             <InfoTooltip>
-              Faça upload de um arquivo HTML completo que será mostrado aos visitantes bloqueados. Inclua todo CSS/JS inline ou use links CDN.
+              Crie um template fazendo upload de arquivo HTML ou colando o código diretamente. Inclua todo CSS/JS inline ou use links CDN.
             </InfoTooltip>
           </div>
           <CardDescription>
-            Faça upload de um arquivo HTML para usar como template de cloaking
+            Escolha entre fazer upload de arquivo ou colar HTML
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleUpload} className="space-y-4">
+          <Tabs defaultValue="upload" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="upload">
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Arquivo
+              </TabsTrigger>
+              <TabsTrigger value="paste">
+                <Code className="w-4 h-4 mr-2" />
+                Colar HTML
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Upload Tab */}
+            <TabsContent value="upload">
+              <form onSubmit={handleUpload} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome do Template</Label>
               <Input
@@ -237,11 +297,49 @@ export default function Templates() {
               </div>
             </div>
 
-            <Button type="submit" disabled={uploading || !selectedFile} className="w-full">
-              <Upload className="w-4 h-4 mr-2" />
-              {uploading ? 'Enviando...' : 'Fazer Upload'}
-            </Button>
-          </form>
+                <Button type="submit" disabled={uploading || !selectedFile} className="w-full">
+                  <Upload className="w-4 h-4 mr-2" />
+                  {uploading ? 'Enviando...' : 'Fazer Upload'}
+                </Button>
+              </form>
+            </TabsContent>
+
+            {/* Paste HTML Tab */}
+            <TabsContent value="paste">
+              <form onSubmit={handlePasteCreate} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="paste-name">Nome do Template</Label>
+                  <Input
+                    id="paste-name"
+                    placeholder="Minha Landing Page"
+                    value={pasteTemplateName}
+                    onChange={(e) => setPasteTemplateName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="html-content">Código HTML</Label>
+                  <Textarea
+                    id="html-content"
+                    placeholder="Cole seu código HTML aqui..."
+                    value={htmlContent}
+                    onChange={(e) => setHtmlContent(e.target.value)}
+                    className="font-mono text-sm min-h-[400px]"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Cole o código HTML completo, incluindo tags &lt;html&gt;, &lt;head&gt; e &lt;body&gt;
+                  </p>
+                </div>
+
+                <Button type="submit" disabled={uploading || !htmlContent.trim()} className="w-full">
+                  <Code className="w-4 h-4 mr-2" />
+                  {uploading ? 'Criando...' : 'Criar Template'}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
