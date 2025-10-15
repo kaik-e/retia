@@ -8,14 +8,25 @@ const db = require('../database');
 
 const templatesDir = process.env.TEMPLATES_DIR || './data/templates';
 
+// Ensure templates directory exists
+if (!fs.existsSync(templatesDir)) {
+  fs.mkdirSync(templatesDir, { recursive: true });
+}
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, templatesDir);
   },
   filename: (req, file, cb) => {
-    const uniqueName = `${uuidv4()}${path.extname(file.originalname)}`;
-    cb(null, uniqueName);
+    try {
+      const ext = path.extname(file.originalname) || '.html';
+      const uniqueName = `${uuidv4()}${ext}`;
+      cb(null, uniqueName);
+    } catch (error) {
+      console.error('Error generating filename:', error);
+      cb(error);
+    }
   }
 });
 
@@ -68,33 +79,57 @@ router.get('/:id', (req, res) => {
 
 // Upload new template
 router.post('/', upload.single('template'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded' });
-  }
+  try {
+    console.log('Upload request received:', {
+      hasFile: !!req.file,
+      body: req.body,
+      file: req.file ? {
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size
+      } : null
+    });
 
-  const userId = req.user?.id || 'master-user-id';
-  const id = uuidv4();
-  const name = req.body.name || path.basename(req.file.originalname, '.html');
-  const file_path = req.file.filename;
-
-  db.run(
-    'INSERT INTO templates (id, user_id, name, file_path) VALUES (?, ?, ?, ?)',
-    [id, userId, name, file_path],
-    function(err) {
-      if (err) {
-        // Delete uploaded file if database insert fails
-        fs.unlinkSync(path.join(templatesDir, file_path));
-        return res.status(500).json({ error: err.message });
-      }
-      res.json({
-        id,
-        user_id: userId,
-        name,
-        file_path,
-        created_at: new Date().toISOString()
-      });
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
     }
-  );
+
+    const userId = req.user?.id || 'master-user-id';
+    const id = uuidv4();
+    const name = req.body.name || path.basename(req.file.originalname, '.html');
+    const file_path = req.file.filename;
+
+    console.log('Creating template:', { id, userId, name, file_path });
+
+    db.run(
+      'INSERT INTO templates (id, user_id, name, file_path) VALUES (?, ?, ?, ?)',
+      [id, userId, name, file_path],
+      function(err) {
+        if (err) {
+          console.error('Database insert error:', err);
+          // Delete uploaded file if database insert fails
+          try {
+            fs.unlinkSync(path.join(templatesDir, file_path));
+          } catch (unlinkErr) {
+            console.error('Error deleting file:', unlinkErr);
+          }
+          return res.status(500).json({ error: err.message });
+        }
+        
+        console.log('Template created successfully:', id);
+        res.json({
+          id,
+          user_id: userId,
+          name,
+          file_path,
+          created_at: new Date().toISOString()
+        });
+      }
+    );
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Delete template (check ownership)
