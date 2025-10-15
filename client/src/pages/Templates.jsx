@@ -92,19 +92,34 @@ export default function Templates() {
 
   const handlePasteCreate = async (e) => {
     e.preventDefault()
-    if (!htmlContent.trim() || !pasteTemplateName.trim()) return
+    console.log('[Templates] handlePasteCreate called')
+    
+    if (!htmlContent.trim() || !pasteTemplateName.trim()) {
+      console.log('[Templates] Missing content or name')
+      return
+    }
 
     setUploading(true)
     try {
+      console.log('[Templates] Creating blob and file...', {
+        contentLength: htmlContent.length,
+        name: pasteTemplateName
+      })
+      
       // Create a Blob from HTML content
       const blob = new Blob([htmlContent], { type: 'text/html' })
+      console.log('[Templates] Blob created:', blob.size, 'bytes')
+      
       const file = new File([blob], `${pasteTemplateName}.html`, { type: 'text/html' })
+      console.log('[Templates] File created:', file.name, file.size, file.type)
       
       const formData = new FormData()
       formData.append('template', file)
       formData.append('name', pasteTemplateName)
+      console.log('[Templates] FormData created, calling API...')
 
-      await api.templates.upload(formData)
+      const response = await api.templates.upload(formData)
+      console.log('[Templates] API response:', response)
       
       // Reset form
       setHtmlContent('')
@@ -120,7 +135,12 @@ export default function Templates() {
       })
       setTimeout(() => setAlert(null), 3000)
     } catch (error) {
-      console.error('Failed to create template:', error)
+      console.error('[Templates] Error details:', {
+        message: error.message,
+        response: error.response,
+        stack: error.stack,
+        fullError: error
+      })
       setAlert({
         variant: 'destructive',
         title: 'Erro',
