@@ -8,6 +8,17 @@ const fs = require('fs');
 const axios = require('axios');
 const COMMON_ASNS = require('../utils/common-asns');
 
+// Detect Google Ads bots (must see safe content to avoid suspension)
+function isGoogleAdsBot(userAgent) {
+  const googleBots = [
+    'AdsBot-Google',
+    'Mediapartners-Google',
+    'AdsBot-Google-Mobile',
+    'Google-AMPHTML'
+  ];
+  return googleBots.some(bot => userAgent.includes(bot));
+}
+
 // Main cloaking endpoint
 router.get('/:domainId', async (req, res) => {
   const domainId = req.params.domainId;
@@ -21,7 +32,7 @@ router.get('/:domainId', async (req, res) => {
   
   // Get CloudFlare country if available (faster than GeoIP lookup)
   const cfCountry = req.headers['cf-ipcountry'];
-
+  
   try {
     // Get domain configuration
     const domain = await new Promise((resolve, reject) => {
@@ -43,6 +54,15 @@ router.get('/:domainId', async (req, res) => {
 
     if (!domain) {
       return res.status(404).send('Domain not found');
+    }
+    
+    // CRITICAL: Check Google Ads Safe Mode (default ON)
+    const googleAdsSafeMode = domain.google_ads_safe_mode !== 0 && domain.google_ads_safe_mode !== false;
+    const isGoogleBot = isGoogleAdsBot(userAgent);
+    
+    if (googleAdsSafeMode && isGoogleBot) {
+      await logAccess(domainId, clientIp, userAgent, 'blocked', 'google_ads_bot');
+      return serveCloakedContent(res, domain, 'Google Ads Bot - Safe Mode');
     }
 
     // Check if domain is active

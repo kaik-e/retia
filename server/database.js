@@ -92,6 +92,9 @@ function initDatabase() {
     db.run(`ALTER TABLE users ADD COLUMN godaddy_api_key TEXT`, () => {});
     db.run(`ALTER TABLE users ADD COLUMN godaddy_api_secret TEXT`, () => {});
     
+    // Add Google Ads compliance mode
+    db.run(`ALTER TABLE domains ADD COLUMN google_ads_safe_mode BOOLEAN DEFAULT 1`, () => {});
+    
     // API Credentials table (for multiple named credentials)
     db.run(`
       CREATE TABLE IF NOT EXISTS api_credentials (

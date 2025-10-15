@@ -32,6 +32,7 @@ export default function DomainEdit() {
     block_asn: false,
     lockdown_mode: false,
     lockdown_template_id: '',
+    google_ads_safe_mode: true,
     is_active: true,
   })
 
@@ -76,6 +77,7 @@ export default function DomainEdit() {
         block_asn: domain.block_asn || false,
         lockdown_mode: domain.lockdown_mode || false,
         lockdown_template_id: domain.lockdown_template_id || '',
+        google_ads_safe_mode: domain.google_ads_safe_mode !== undefined ? domain.google_ads_safe_mode : true,
         is_active: domain.is_active !== undefined ? domain.is_active : true,
       })
       setAsnBlocks(domain.asn_blocks || [])
@@ -240,6 +242,79 @@ export default function DomainEdit() {
                 Página HTML mostrada para visitantes bloqueados
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Google Ads Safe Mode */}
+        <Card className={formData.google_ads_safe_mode ? 'border-green-500' : 'border-yellow-500'}>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              {formData.google_ads_safe_mode ? (
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              ) : (
+                <AlertTriangle className="w-5 h-5 text-yellow-600" />
+              )}
+              <CardTitle>Google Ads Safe Mode</CardTitle>
+            </div>
+            <CardDescription>
+              Proteção contra suspensão de conta Google Ads
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <div className="flex items-center">
+                  <Label>Ativar Proteção</Label>
+                  <InfoTooltip>
+                    RECOMENDADO: Mostra conteúdo seguro para bots do Google Ads (AdsBot-Google, Mediapartners-Google). 
+                    Isso evita suspensão por "cloaking" ou "fraude em sistemas". Desative apenas se souber o que está fazendo.
+                  </InfoTooltip>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Bots do Google Ads verão o template seguro
+                </p>
+              </div>
+              <Switch
+                checked={formData.google_ads_safe_mode}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, google_ads_safe_mode: checked })
+                }
+              />
+            </div>
+
+            {!formData.google_ads_safe_mode && (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                <div className="flex gap-2">
+                  <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-yellow-900">
+                      ⚠️ Risco de Suspensão
+                    </p>
+                    <p className="text-xs text-yellow-800">
+                      Desativar esta proteção pode resultar em suspensão da conta Google Ads por 
+                      "Fraude em sistemas" ou "Cloaking". Use apenas se tiver certeza absoluta.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {formData.google_ads_safe_mode && (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-md">
+                <div className="flex gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-green-900">
+                      ✅ Proteção Ativa
+                    </p>
+                    <p className="text-xs text-green-800">
+                      Bots do Google Ads (AdsBot-Google, Mediapartners-Google) verão o template seguro, 
+                      reduzindo drasticamente o risco de suspensão.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
