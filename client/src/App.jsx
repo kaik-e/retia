@@ -11,31 +11,34 @@ import Automations from './pages/Automations'
 import Login from './pages/Login'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
+import { ThemeProvider } from './components/theme-provider'
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="domains" element={<Domains />} />
-          <Route path="domains/new" element={<DomainEdit />} />
-          <Route path="domains/:id" element={<DomainEdit />} />
-          <Route path="templates" element={<Templates />} />
-          <Route path="analytics/:id" element={<Analytics />} />
-          <Route path="logs" element={<Logs />} />
-          <Route path="proxy" element={<ProxyManager />} />
-          <Route path="users" element={<Users />} />
-          <Route path="automations" element={<Automations />} />
-        </Route>
-      </Routes>
-    </Router>
+    <ThemeProvider defaultTheme="light" storageKey="retia-theme">
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="domains" element={<Domains />} />
+            <Route path="domains/new" element={<DomainEdit />} />
+            <Route path="domains/:id" element={<DomainEdit />} />
+            <Route path="templates" element={<Templates />} />
+            <Route path="analytics/:id" element={<Analytics />} />
+            <Route path="logs" element={<Logs />} />
+            <Route path="proxy" element={<ProxyManager />} />
+            <Route path="users" element={<Users />} />
+            <Route path="automations" element={<Automations />} />
+          </Route>
+        </Routes>
+      </Router>
+    </ThemeProvider>
   )
 }
 

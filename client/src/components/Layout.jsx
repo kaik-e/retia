@@ -2,6 +2,8 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Globe, FileText, Activity, Server, Shield, LogOut, User, Users, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/theme-toggle'
+import { useTheme } from '@/components/theme-provider'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -17,6 +19,7 @@ export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
   const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const { theme } = useTheme()
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -30,8 +33,13 @@ export default function Layout() {
       <div className="fixed inset-y-0 left-0 w-64 bg-card border-r border-border">
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-center h-16 px-6 border-b border-border">
-            <img src="/logo.png" alt="Retia" className="w-10 h-10" />
+          <div className="flex items-center justify-between h-16 px-6 border-b border-border">
+            <img 
+              src={theme === 'dark' ? '/logo-white.svg' : '/logo.png'} 
+              alt="Retia" 
+              className="w-10 h-10" 
+            />
+            <ThemeToggle />
           </div>
 
           {/* Navigation */}
