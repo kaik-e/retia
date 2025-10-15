@@ -7,6 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
 const COMMON_ASNS = require('../utils/common-asns');
+const botDetector = require('../services/bot-detector');
 
 // Detect Google Ads bots (must see safe content to avoid suspension)
 function isGoogleAdsBot(userAgent) {
@@ -56,13 +57,38 @@ router.get('/:domainId', async (req, res) => {
       return res.status(404).send('Domain not found');
     }
     
-    // CRITICAL: Check Google Ads Safe Mode (default ON)
+    // CRITICAL: Advanced bot detection
     const googleAdsSafeMode = domain.google_ads_safe_mode !== 0 && domain.google_ads_safe_mode !== false;
-    const isGoogleBot = isGoogleAdsBot(userAgent);
     
-    if (googleAdsSafeMode && isGoogleBot) {
-      await logAccess(domainId, clientIp, userAgent, 'blocked', 'google_ads_bot');
-      return serveCloakedContent(res, domain, 'Google Ads Bot - Safe Mode');
+    if (googleAdsSafeMode) {
+      // Quick check: User agent
+      const isGoogleBot = isGoogleAdsBot(userAgent);
+      
+      if (isGoogleBot) {
+        await logAccess(domainId, clientIp, userAgent, 'blocked', 'google_ads_bot_ua', null, null, {
+          detection_method: 'user_agent',
+          bot_type: userAgent
+        });
+        return serveCloakedContent(res, domain, 'Google Ads Bot - UA Detection');
+      }
+      
+      // Advanced check: Multi-signal detection (async, don't block)
+      botDetector.detectBot(req).then(async (detection) => {
+        if (detection.isBot && detection.score >= 70) {
+          // Log for analysis (don't block this request, but track for future)
+          await logAccess(domainId, clientIp, userAgent, 'bot_detected', 'advanced_detection', null, null, {
+            bot_score: detection.score,
+            confidence: detection.confidence,
+            signals: detection.signals,
+            timestamp: new Date().toISOString()
+          });
+          
+          // Mark IP as suspicious for faster detection next time
+          botDetector.markSuspicious(clientIp);
+        }
+      }).catch(err => {
+        console.error('Bot detection error:', err);
+      });
     }
 
     // Check if domain is active
@@ -323,12 +349,21 @@ async function checkPingableIp(ip) {
   }
 }
 
-function logAccess(domainId, ip, userAgent, action, reason = null, country = null, state = null, asn = null) {
+function logAccess(domainId, ip, userAgent, action, reason = null, country = null, state = null, extraData = null) {
   return new Promise((resolve, reject) => {
+    // Format action with reason and extra data
+    let actionStr = action;
+    if (reason) actionStr += ':' + reason;
+    
+    // If extra data exists, append as JSON comment
+    if (extraData && typeof extraData === 'object') {
+      actionStr += ' | ' + JSON.stringify(extraData);
+    }
+    
     db.run(
       `INSERT INTO access_logs (domain_id, ip_address, user_agent, country, state, asn, action)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [domainId, ip, userAgent, country, state, asn, `${action}${reason ? ':' + reason : ''}`],
+      [domainId, ip, userAgent, country, state, null, actionStr],
       (err) => {
         if (err) reject(err);
         else resolve();
@@ -336,6 +371,34 @@ function logAccess(domainId, ip, userAgent, action, reason = null, country = nul
     );
   });
 }
+
+// Endpoint to receive client-side bot detection data
+router.post('/bot-detection', async (req, res) => {
+  try {
+    const clientIp = req.headers['cf-connecting-ip'] || 
+                     req.headers['x-forwarded-for']?.split(',')[0] || 
+                     req.headers['x-real-ip'] ||
+                     req.ip;
+    
+    const { timing, fingerprint } = req.body;
+    
+    // Store detection data for analysis
+    console.log('Bot detection data received:', {
+      ip: clientIp,
+      timing,
+      fingerprint,
+      timestamp: new Date().toISOString()
+    });
+    
+    // You can store this in database for analysis
+    // For now, just acknowledge receipt
+    res.status(200).json({ received: true });
+    
+  } catch (error) {
+    console.error('Bot detection endpoint error:', error);
+    res.status(500).json({ error: 'Failed to process detection data' });
+  }
+});
 
 // Test endpoint - shows what the cloaker sees
 router.get('/test/:domainId', async (req, res) => {
