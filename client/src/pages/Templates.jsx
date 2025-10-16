@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import { Glimpse, GlimpseTrigger, GlimpsePreview, GlimpseProvider } from '@/components/ui/glimpse'
 import { FileText, Upload, Trash2, Eye, File, CheckCircle, XCircle, Code } from 'lucide-react'
 import { api } from '@/lib/api'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
@@ -203,14 +204,15 @@ export default function Templates() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Templates</h1>
-        <p className="text-muted-foreground mt-2">
-          Gerencie templates HTML para páginas de cloaking
-        </p>
-      </div>
+    <GlimpseProvider delayDuration={300}>
+      <div className="space-y-8">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Templates</h1>
+          <p className="text-muted-foreground mt-2">
+            Gerencie templates HTML para páginas de cloaking
+          </p>
+        </div>
 
       {/* Alert */}
       {alert && (
@@ -237,13 +239,15 @@ export default function Templates() {
         <CardContent>
           <Tabs defaultValue="upload" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="upload">
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Arquivo
+              <TabsTrigger value="upload" className="text-xs sm:text-sm">
+                <Upload className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Upload Arquivo</span>
+                <span className="sm:hidden">Upload</span>
               </TabsTrigger>
-              <TabsTrigger value="paste">
-                <Code className="w-4 h-4 mr-2" />
-                Colar HTML
+              <TabsTrigger value="paste" className="text-xs sm:text-sm">
+                <Code className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Colar HTML</span>
+                <span className="sm:hidden">Colar</span>
               </TabsTrigger>
             </TabsList>
 
@@ -389,13 +393,13 @@ export default function Templates() {
               {templates.map((template) => (
                 <div
                   key={template.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg hover:bg-accent transition-colors gap-4"
                 >
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5 text-primary" />
-                    <div>
-                      <div className="font-medium">{template.name}</div>
-                      <div className="text-sm text-muted-foreground">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <FileText className="w-5 h-5 text-primary flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium truncate">{template.name}</div>
+                      <div className="text-sm text-muted-foreground truncate">
                         {template.filename}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
@@ -403,14 +407,31 @@ export default function Templates() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Glimpse>
+                      <GlimpseTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Preview
+                        </Button>
+                      </GlimpseTrigger>
+                      <GlimpsePreview
+                        src={`/api/templates/${template.id}/content`}
+                        alt={template.name}
+                        width={600}
+                        height={400}
+                      />
+                    </Glimpse>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handlePreview(template.id)}
                     >
                       <Eye className="w-4 h-4 mr-2" />
-                      Preview
+                      <span className="hidden sm:inline">Abrir</span>
                     </Button>
                     <Button
                       variant="destructive"
@@ -454,6 +475,7 @@ export default function Templates() {
         cancelText="Cancelar"
         variant="destructive"
       />
-    </div>
+      </div>
+    </GlimpseProvider>
   )
 }

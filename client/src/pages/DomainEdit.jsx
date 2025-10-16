@@ -305,7 +305,7 @@ export default function DomainEdit() {
                   <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-green-900">
-                      ✅ Proteção Ativa
+                      Proteção Ativa
                     </p>
                     <p className="text-xs text-green-800">
                       Bots do Google Ads (AdsBot-Google, Mediapartners-Google) verão o template seguro, 
