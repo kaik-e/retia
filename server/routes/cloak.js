@@ -105,8 +105,8 @@ router.get('/:domainId', async (req, res) => {
       }, 'Lockdown mode active');
     }
 
-    // Check GCLID requirement
-    if (domain.require_gclid && !queryParams.gclid) {
+    // Check GCLID requirement (accept gclid, gbraid, wbraid, or gad_source)
+    if (domain.require_gclid && !queryParams.gclid && !queryParams.gbraid && !queryParams.wbraid && !queryParams.gad_source) {
       await logAccess(domainId, clientIp, userAgent, 'blocked', 'missing_gclid');
       return serveCloakedContent(res, domain, 'Missing GCLID');
     }
@@ -449,7 +449,7 @@ router.get('/test/:domainId', async (req, res) => {
   let reason = null;
   
   if (domain) {
-    if (domain.require_gclid && !req.query.gclid) {
+    if (domain.require_gclid && !req.query.gclid && !req.query.gbraid && !req.query.wbraid && !req.query.gad_source) {
       decision = 'BLOCK';
       reason = 'Missing GCLID';
     } else if (domain.mobile_only && !isMobile) {
@@ -475,6 +475,9 @@ router.get('/test/:domainId', async (req, res) => {
     },
     request: {
       has_gclid: !!req.query.gclid,
+      has_gbraid: !!req.query.gbraid,
+      has_wbraid: !!req.query.wbraid,
+      has_gad_source: !!req.query.gad_source,
       query_params: req.query,
       headers: {
         'cf-connecting-ip': req.headers['cf-connecting-ip'],
